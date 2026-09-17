@@ -7,7 +7,23 @@ import CheckoutModal from './components/CheckoutModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trucco_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('trucco_cart', JSON.stringify(cart));
+    } catch (err) {
+      console.error('Error guardando carrito:', err);
+    }
+  }, [cart]);
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
