@@ -118,7 +118,7 @@ export const products = [
     name: "Salchipapas",
     description: "Papas francesas crujientes con salchicha ranchera y salsas.",
     category: "Salchipapas",
-    image: "/images/picadas.jpeg",
+    image: "/images/salchipapa.jpg",
     variants: [
       { label: "Salchipapas Sencilla", price: 15000 },
     ],
@@ -128,7 +128,7 @@ export const products = [
     name: "Chori Papa",
     description: "Papas francesas con chorizo y salsas de la casa.",
     category: "Salchipapas",
-    image: "/images/picadas.jpeg",
+    image: "/images/salchipapa.jpg",
     variants: [
       { label: "Chori Papa", price: 20000 },
     ],
@@ -138,7 +138,7 @@ export const products = [
     name: "Salchipapas Suiza",
     description: "Papas francesas con salchicha y queso suizo gratinado.",
     category: "Salchipapas",
-    image: "/images/picadas.jpeg",
+    image: "/images/salchipapa.jpg",
     variants: [
       { label: "Salchipapas Suiza (chorizo + suiza)", price: 22000 },
       { label: "Salchipapas Suiza Especial", price: 25000 },
@@ -193,7 +193,7 @@ export const products = [
     name: "Picada",
     description: "Picada con carnes, papas, salsas y acompañamientos de la casa.",
     category: "Picadas",
-    image: "/images/picadas.jpeg",
+    image: "/images/picadas.jpg",
     variants: [
       { label: "Picada Sencilla (1 persona)", price: 25000 },
       { label: "Picada para 2 personas", price: 35000 },
@@ -207,7 +207,7 @@ export const products = [
     name: "Patacón Especial",
     description: "Patacón cargado con carne, pollo o cerdo, queso y salsas.",
     category: "Patacones",
-    image: "/images/picadas.jpeg",
+    image: "/images/picadas.jpg",
     variants: [
       { label: "Patacón Especial (carne, pollo o cerdo)", price: 25000 },
       { label: "Patacón Sencillo (pollo o cerdo)", price: 20000 },
@@ -220,7 +220,7 @@ export const products = [
     name: "Mega Picada para 6 Personas",
     description: "Carne, pollo, butifarra, chorizo, papas a la francesa, salchichón cervecero, zumu, patacón y salsa de la casa. ¡Un sabor que lo tiene todo!",
     category: "Mega Picada",
-    image: "/images/picadas.jpeg",
+    image: "/images/picadas.jpg",
     variants: [
       { label: "Mega Picada (6 personas)", price: 100000 },
     ],
