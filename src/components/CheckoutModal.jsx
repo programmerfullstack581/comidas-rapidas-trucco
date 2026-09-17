@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Send, CheckCircle, ShieldAlert, Loader2, AlertCircle } from 'lucide-react';
+import { X, Send, CheckCircle, ShieldAlert, Loader2, AlertCircle, FileText, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WHATSAPP_NUMBER } from '../data/products';
 
@@ -18,6 +18,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [savedTicket, setSavedTicket] = useState(null);
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -40,7 +41,24 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  const handleSubmit = (e) => {
+  // Generador y descargador de archivo TXT
+  const downloadTicketTxt = (filename, content) => {
+    try {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error al descargar txt:', err);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -84,38 +102,116 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
     setIsSubmitting(true);
 
     try {
-      let text = `*¡Hola Trucco!* 👋%0A%0AQuiero realizar el siguiente pedido:%0A%0A`;
-      
-      text += `🍔 *PRODUCTOS*%0A`;
-      cart.forEach(item => {
-        const variantText = item.variantLabel && item.variantLabel !== item.name ? ` (${item.variantLabel})` : '';
-        text += `— ${item.quantity}x ${item.name}${variantText} → $${(item.price * item.quantity).toLocaleString('es-CO')}%0A`;
-      });
-      
-      text += `%0A💰 *TOTAL: $${total.toLocaleString('es-CO')}*%0A%0A`;
-      text += `👤 *Cliente:* ${cleanName}%0A`;
-      text += `📱 *Teléfono:* ${cleanPhone}%0A`;
-      text += `📍 *Tipo:* ${formData.orderType === 'domicilio' ? '🛵 Domicilio' : '🏪 Recoger en el punto'}%0A`;
+      const now = new Date();
+      const dateFormatted = now.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const timeFormatted = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const orderId = now.getTime();
+
+      // ═══ 1. CONSTRUIR TEXTO DEL COMPROBANTE TXT ═══
+      let ticketContent = `=====================================================\n`;
+      ticketContent += `          COMIDAS RAPIDAS TRUCCO - PEDIDO\n`;
+      ticketContent += `=====================================================\n`;
+      ticketContent += `Fecha: ${dateFormatted} - ${timeFormatted}\n`;
+      ticketContent += `ID Pedido: #${orderId}\n`;
+      ticketContent += `Estado: Enviado por WhatsApp\n\n`;
+
+      ticketContent += `-----------------------------------------------------\n`;
+      ticketContent += `DATOS DEL CLIENTE\n`;
+      ticketContent += `-----------------------------------------------------\n`;
+      ticketContent += `Nombre: ${cleanName}\n`;
+      ticketContent += `Telefono: ${cleanPhone}\n`;
+      ticketContent += `Modalidad: ${formData.orderType === 'domicilio' ? 'Domicilio' : 'Recoger en el punto'}\n`;
       if (formData.orderType === 'domicilio' && formData.address) {
-        text += `🏠 *Dirección:* ${formData.address.trim()}%0A`;
+        ticketContent += `Direccion: ${formData.address.trim()}\n`;
       }
       if (formData.notes) {
-        text += `📝 *Observaciones:* ${formData.notes.trim()}%0A`;
+        ticketContent += `Observaciones: ${formData.notes.trim()}\n`;
       }
-      text += `%0A¡Gracias! 🙌`;
+      ticketContent += `\n`;
+
+      ticketContent += `-----------------------------------------------------\n`;
+      ticketContent += `DETALLE DEL PEDIDO\n`;
+      ticketContent += `-----------------------------------------------------\n`;
+      cart.forEach((item, index) => {
+        const variantText = item.variantLabel && item.variantLabel !== item.name ? ` (${item.variantLabel})` : '';
+        ticketContent += `${index + 1}. ${item.quantity}x ${item.name}${variantText}\n`;
+        ticketContent += `   Subtotal: $${(item.price * item.quantity).toLocaleString('es-CO')} COP\n`;
+      });
+      ticketContent += `\n`;
+
+      ticketContent += `=====================================================\n`;
+      ticketContent += `TOTAL A PAGAR: $${total.toLocaleString('es-CO')} COP\n`;
+      ticketContent += `=====================================================\n`;
+      ticketContent += `¡Gracias por preferir Comidas Rapidas Trucco!\n`;
+      ticketContent += `Direccion: Urbanizacion Emmanuel, Barrio 20 de Julio\n`;
+      ticketContent += `Cartagena, Bolivar\n`;
+      ticketContent += `=====================================================\n`;
+
+      // Nombre del archivo txt: Pedido_[Nombre]_[Fecha]_[Hora].txt
+      const safeName = cleanName.replace(/[^a-zA-Z0-9]/g, '_');
+      const fileDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const fileTime = `${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
+      const fileName = `Pedido_${safeName}_${fileDate}_${fileTime}.txt`;
+
+      setSavedTicket({ filename: fileName, content: ticketContent });
+
+      // Guardar en disco local en public/pedidos (vía Vite server middleware)
+      try {
+        await fetch('/api/save-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: fileName, content: ticketContent })
+        });
+      } catch (err) {
+        console.log('Guardado en servidor local omitido (ej. en Netlify):', err);
+      }
+
+      // Descargar automáticamente el archivo .txt en el equipo del cliente / administrador
+      downloadTicketTxt(fileName, ticketContent);
+
+      // ═══ 2. CONSTRUIR MENSAJE LIMPIO DE WHATSAPP (100% UTF-8 CODIFICADO) ═══
+      let rawWhatsAppText = `*¡Hola Comidas Rápidas Trucco!* 👋\n\n`;
+      rawWhatsAppText += `Quiero realizar el siguiente pedido:\n\n`;
+      
+      rawWhatsAppText += `==========================\n`;
+      rawWhatsAppText += `🍔 *RESUMEN DEL PEDIDO*\n`;
+      rawWhatsAppText += `==========================\n`;
+      cart.forEach(item => {
+        const variantText = item.variantLabel && item.variantLabel !== item.name ? ` (${item.variantLabel})` : '';
+        rawWhatsAppText += `• ${item.quantity}x ${item.name}${variantText} → $${(item.price * item.quantity).toLocaleString('es-CO')}\n`;
+      });
+      
+      rawWhatsAppText += `\n💰 *TOTAL A PAGAR: $${total.toLocaleString('es-CO')}*\n\n`;
+      
+      rawWhatsAppText += `==========================\n`;
+      rawWhatsAppText += `📋 *DATOS DE ENTREGA*\n`;
+      rawWhatsAppText += `==========================\n`;
+      rawWhatsAppText += `• *Cliente:* ${cleanName}\n`;
+      rawWhatsAppText += `• *Teléfono:* ${cleanPhone}\n`;
+      rawWhatsAppText += `• *Modalidad:* ${formData.orderType === 'domicilio' ? '🛵 Domicilio' : '🏪 Recoger en el punto'}\n`;
+      if (formData.orderType === 'domicilio' && formData.address) {
+        rawWhatsAppText += `• *Dirección:* ${formData.address.trim()}\n`;
+      }
+      if (formData.notes) {
+        rawWhatsAppText += `• *Observaciones:* ${formData.notes.trim()}\n`;
+      }
+      rawWhatsAppText += `\n¡Quedo atento a su confirmación! Muchas gracias. 🙌`;
 
       // Registrar timestamp en almacenamiento local para anti-spam persistente
       localStorage.setItem('trucco_last_order_timestamp', Date.now().toString());
       setCooldownRemaining(COOLDOWN_SECONDS);
 
-      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
+      // CODIFICACIÓN ESTRICTA: encodeURIComponent garantiza cero caracteres corruptos o 
+      const encodedMessage = encodeURIComponent(rawWhatsAppText);
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
       window.open(whatsappUrl, '_blank');
       
       setIsSubmitted(true);
       if (onConfirmOrder) {
-        onConfirmOrder(formData);
+        onConfirmOrder({ ...formData, ticketFileName: fileName });
       }
     } catch (err) {
+      console.error(err);
       setErrorMessage('Ocurrió un error al procesar el pedido. Intenta nuevamente.');
     } finally {
       setIsSubmitting(false);
@@ -125,6 +221,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
   const handleClose = () => {
     if (isSubmitted) {
       setIsSubmitted(false);
+      setSavedTicket(null);
       setFormData({ name: '', phone: '', orderType: 'recoger', address: '', notes: '' });
     }
     setErrorMessage('');
@@ -162,17 +259,36 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                  className="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4"
+                  className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-2"
                 >
-                  <CheckCircle className="w-12 h-12" />
+                  <CheckCircle className="w-10 h-10" />
                 </motion.div>
                 <h3 className="text-2xl font-black text-neutral">¡Todo listo, {formData.name}!</h3>
-                <p className="text-gray-500 max-w-sm">
-                  Tu pedido ha sido enviado exitosamente y el carrito se ha vaciado. Puedes revisar este pedido en tu historial.
+                <p className="text-gray-500 max-w-sm text-sm">
+                  Tu pedido ha sido enviado con éxito a WhatsApp, el carrito se ha vaciado y guardamos el registro en tu historial.
                 </p>
+
+                {savedTicket && (
+                  <div className="w-full bg-white p-4 rounded-2xl border border-cream-dark text-left space-y-2 mt-2">
+                    <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+                      <FileText className="w-4 h-4" /> Comprobante generado
+                    </div>
+                    <p className="text-xs text-gray-500 font-mono break-all">
+                      {savedTicket.filename}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => downloadTicketTxt(savedTicket.filename, savedTicket.content)}
+                      className="w-full py-2 px-3 bg-cream hover:bg-cream-dark border border-cream-dark rounded-xl text-xs font-bold text-neutral flex items-center justify-center gap-2 transition-colors mt-2"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Descargar copia de respaldo (.txt)
+                    </button>
+                  </div>
+                )}
+
                 <button 
                   onClick={handleClose}
-                  className="mt-6 w-full py-4 rounded-xl font-black text-lg bg-neutral text-white hover:bg-neutral-800 transition-colors"
+                  className="mt-4 w-full py-3.5 rounded-xl font-black text-base bg-neutral text-white hover:bg-neutral-800 transition-colors"
                 >
                   Cerrar y seguir navegando
                 </button>

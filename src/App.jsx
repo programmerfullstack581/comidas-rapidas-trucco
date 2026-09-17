@@ -15,11 +15,32 @@ function App() {
   const [activeSection, setActiveSection] = useState('inicio');
   const [heroSlide, setHeroSlide] = useState(0);
   const [activeCategory, setActiveCategory] = useState("Todos");
-  const [orderHistory, setOrderHistory] = useState([]);
+  const [orderHistory, setOrderHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trucco_order_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const handleOrderComplete = (orderData) => {
-    setOrderHistory(prev => [{ ...orderData, date: new Date().toISOString(), items: [...cart] }, ...prev]);
+    const newOrder = { 
+      ...orderData, 
+      id: Date.now(),
+      date: new Date().toISOString(), 
+      items: [...cart] 
+    };
+    setOrderHistory(prev => {
+      const updated = [newOrder, ...prev];
+      try {
+        localStorage.setItem('trucco_order_history', JSON.stringify(updated));
+      } catch (err) {
+        console.error('Error saving order history:', err);
+      }
+      return updated;
+    });
     setCart([]);
   };
 
