@@ -15,6 +15,13 @@ function App() {
   const [activeSection, setActiveSection] = useState('inicio');
   const [heroSlide, setHeroSlide] = useState(0);
   const [activeCategory, setActiveCategory] = useState("Todos");
+  const [orderHistory, setOrderHistory] = useState([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  const handleOrderComplete = (orderData) => {
+    setOrderHistory(prev => [{ ...orderData, date: new Date().toISOString(), items: [...cart] }, ...prev]);
+    setCart([]);
+  };
 
   // Filtramos los productos destacados para el Hero (uno de cada categoría principal)
   const heroProducts = [
@@ -123,6 +130,14 @@ function App() {
           </nav>
 
           <div className="flex items-center gap-3 z-50 relative">
+            {orderHistory.length > 0 && (
+              <button 
+                onClick={() => setIsHistoryOpen(true)}
+                className="hidden sm:flex items-center gap-2 p-3 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all font-bold text-sm border border-white/10"
+              >
+                <Clock className="w-5 h-5" /> Mis Pedidos
+              </button>
+            )}
             <button 
               onClick={() => setIsCartOpen(true)}
               className="relative p-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-all hover:scale-105 shadow-lg shadow-primary/30 flex items-center gap-2"
@@ -549,7 +564,69 @@ function App() {
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         cart={cart}
+        onConfirmOrder={handleOrderComplete}
       />
+
+      {/* History Modal */}
+      <AnimatePresence>
+        {isHistoryOpen && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsHistoryOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-cream rounded-3xl shadow-2xl w-full max-w-lg relative z-10 overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 bg-neutral text-white flex justify-between items-center">
+                <h3 className="text-xl font-black flex items-center gap-2">
+                  <Clock className="text-secondary w-6 h-6" /> Historial de Pedidos
+                </h3>
+                <button onClick={() => setIsHistoryOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto bg-white flex-grow">
+                {orderHistory.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No has realizado ningún pedido aún.</p>
+                ) : (
+                  <div className="space-y-6">
+                    {orderHistory.map((order, idx) => (
+                      <div key={idx} className="border-2 border-cream-dark rounded-2xl p-4 bg-cream/50">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-bold text-neutral text-sm">
+                            {new Date(order.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className="bg-secondary text-neutral px-3 py-1 rounded-full text-xs font-black uppercase">
+                            {order.orderType === 'domicilio' ? '🛵 Domicilio' : '🏪 Recoger'}
+                          </span>
+                        </div>
+                        <ul className="space-y-2 mb-3">
+                          {order.items.map((item, i) => (
+                            <li key={i} className="flex justify-between text-sm text-gray-700">
+                              <span><span className="font-bold">{item.quantity}x</span> {item.name} {item.variantLabel && item.variantLabel !== item.name ? `(${item.variantLabel})` : ''}</span>
+                              <span className="font-medium">${(item.price * item.quantity).toLocaleString('es-CO')}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="pt-3 border-t-2 border-cream-dark flex justify-between items-center font-black text-neutral">
+                          <span>Total</span>
+                          <span className="text-primary text-lg">${order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('es-CO')}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
