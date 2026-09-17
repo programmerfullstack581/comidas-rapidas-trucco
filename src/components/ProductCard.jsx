@@ -22,9 +22,9 @@ export default function ProductCard({ product, onAdd }) {
     <motion.div 
       whileHover={{ y: -4 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl transition-shadow duration-300 flex flex-col border border-cream-dark"
+      className="bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-shadow duration-300 flex flex-col border border-cream-dark relative z-10 hover:z-20"
     >
-      <div className="relative h-52 overflow-hidden bg-cream">
+      <div className="relative h-52 overflow-hidden bg-cream rounded-t-3xl">
         <img 
           src={product.image} 
           alt={product.name}
@@ -55,7 +55,7 @@ export default function ProductCard({ product, onAdd }) {
             </button>
             
             {isVariantOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-cream-dark rounded-xl shadow-xl z-20 overflow-hidden">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-cream-dark rounded-xl shadow-xl z-[60] overflow-hidden">
                 {product.variants.map((variant, i) => (
                   <button
                     key={i}
