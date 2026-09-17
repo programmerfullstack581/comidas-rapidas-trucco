@@ -1,0 +1,557 @@
+import { useState, useEffect } from 'react';
+import { ShoppingCart, Clock, MapPin, Phone, Menu as MenuIcon, X, QrCode, ArrowRight, Star, Flame, ChefHat, Truck, Heart, ArrowDown } from 'lucide-react';
+import { products, categories, WHATSAPP_NUMBER } from './data/products';
+import ProductCard from './components/ProductCard';
+import CartSidebar from './components/CartSidebar';
+import CheckoutModal from './components/CheckoutModal';
+import { motion, AnimatePresence } from 'framer-motion';
+
+function App() {
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState('inicio');
+  const [heroSlide, setHeroSlide] = useState(0);
+  const [activeCategory, setActiveCategory] = useState("Todos");
+
+  // Filtramos los productos destacados para el Hero (uno de cada categoría principal)
+  const heroProducts = [
+    products.find(p => p.id === 7), // Perro todas las carnes
+    products.find(p => p.id === 8), // Hamburguesa
+    products.find(p => p.id === 12), // Salchipapas
+    products.find(p => p.id === 16), // Burrito
+    products.find(p => p.id === 19), // Mega Picada
+  ].filter(Boolean);
+
+  const heroImages = heroProducts.map(p => p.image);
+
+  const filteredProducts = activeCategory === "Todos" 
+    ? products 
+    : products.filter(p => p.category === activeCategory);
+
+  // Auto-avance del carrusel cada 10 segundos
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroSlide((prev) => (prev + 1) % heroImages.length);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [heroImages.length]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const isRestaurantOpen = () => {
+    const hour = new Date().getHours();
+    return hour >= 17 || hour === 0;
+  };
+  const openStatus = isRestaurantOpen();
+
+  const addToCart = (product) => {
+    const existingIndex = cart.findIndex(item => item.id === product.id);
+    if (existingIndex >= 0) {
+      const newCart = [...cart];
+      newCart[existingIndex].quantity += 1;
+      setCart(newCart);
+    } else {
+      setCart([...cart, { ...product, quantity: 1 }]);
+    }
+    setIsCartOpen(true);
+  };
+
+  const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const navLinks = [
+    { name: 'Inicio', href: 'inicio' },
+    { name: 'Nosotros', href: 'nosotros' },
+    { name: 'Menú', href: 'menu' },
+    { name: 'Contacto', href: 'contacto' },
+  ];
+
+  const scrollTo = (id) => {
+    setIsMobileMenuOpen(false);
+    setActiveSection(id);
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 80;
+      const top = element.getBoundingClientRect().top + window.pageYOffset - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
+      
+      {/* ═══════════════ NAVBAR ═══════════════ */}
+      <header className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrolled ? 'bg-neutral shadow-2xl' : 'bg-transparent'}`}>
+        {/* Top bar */}
+        <div className={`transition-all duration-300 overflow-hidden ${scrolled ? 'h-0' : 'h-9'}`}>
+          <div className="bg-secondary text-neutral text-center py-2 text-sm font-bold tracking-wide">
+            🔥 Abiertos todos los días de 5:00 PM a 12:00 AM — ¡Haz tu pedido ahora!
+          </div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="cursor-pointer z-50 relative" onClick={() => scrollTo('inicio')}>
+            <img 
+              src="/logo.png" 
+              alt="Trucco" 
+              className={`transition-all duration-300 object-contain ${scrolled ? 'h-14' : 'h-20 md:h-24 drop-shadow-lg'}`} 
+            /></div>
+
+          {/* Desktop Nav */}
+          <nav className="hidden lg:flex items-center gap-1 bg-white/10 backdrop-blur-md px-2 py-2 rounded-full border border-white/10">
+            {navLinks.map((link) => (
+              <button 
+                key={link.name} 
+                onClick={() => scrollTo(link.href)}
+                className={`font-bold px-5 py-2.5 rounded-full text-sm uppercase tracking-wider transition-all ${
+                  activeSection === link.href
+                    ? 'bg-primary text-white shadow-md'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {link.name}
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3 z-50 relative">
+            <button 
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-all hover:scale-105 shadow-lg shadow-primary/30 flex items-center gap-2"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {cartItemsCount > 0 && (
+                <>
+                  <span className="hidden sm:block font-bold text-sm pr-1">
+                    ${cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('es-CO')}
+                  </span>
+                  <span className="absolute -top-2 -right-2 bg-secondary text-neutral text-xs font-black rounded-full w-6 h-6 flex items-center justify-center shadow-md animate-bounce">
+                    {cartItemsCount}
+                  </span>
+                </>
+              )}
+            </button>
+            
+            <button 
+              className="lg:hidden p-2 rounded-full text-white bg-white/10 backdrop-blur-sm border border-white/10"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="absolute top-full left-0 w-full bg-neutral shadow-2xl flex flex-col py-4 px-6 z-40 border-t border-white/10"
+            >
+              {navLinks.map((link) => (
+                <button 
+                  key={link.name} 
+                  onClick={() => scrollTo(link.href)}
+                  className="py-4 text-left font-black text-xl text-white border-b border-white/10 last:border-0 hover:text-secondary transition-colors"
+                >
+                  {link.name}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* ═══════════════ HERO / CARRUSEL FULL-WIDTH ═══════════════ */}
+      <section id="inicio" className="relative h-[85vh] md:h-screen overflow-hidden bg-neutral pt-[calc(2.25rem+5rem)]">
+        
+        {/* Slides de fondo */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={heroSlide}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0 z-0"
+          >
+            <img 
+              src={heroImages[heroSlide]} 
+              alt={`Producto Trucco ${heroSlide + 1}`} 
+              className="w-full h-full object-cover"
+            />
+            {/* Gradiente oscuro sobre la imagen para legibilidad */}
+            <div className="absolute inset-0 bg-gradient-to-r from-neutral via-neutral/80 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral via-transparent to-neutral/40"></div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Contenido superpuesto */}
+        <div className="relative z-10 h-full flex items-center">
+          <div className="max-w-7xl mx-auto px-6 w-full">
+            <div className="max-w-2xl">
+              <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <div className="inline-flex items-center gap-2 bg-secondary/20 border border-secondary/40 text-secondary px-5 py-2.5 rounded-full font-bold mb-8 text-sm uppercase tracking-widest backdrop-blur-sm">
+                  <Flame className="w-4 h-4" />
+                  Comidas Rápidas Trucco
+                </div>
+                
+                {/* Nombre del producto actual */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`info-${heroSlide}`}
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 30 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <h1 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-black text-white mb-4 leading-[1.05] drop-shadow-lg">
+                      {heroProducts[heroSlide]?.name || 'Comidas Rápidas Trucco'}
+                    </h1>
+                    <p className="text-gray-300 text-lg lg:text-xl mb-4 max-w-lg leading-relaxed drop-shadow-md">
+                      {heroProducts[heroSlide]?.description || 'Las mejores hamburguesas y salchipapas de la ciudad.'}
+                    </p>
+                    <div className="inline-flex items-center gap-3 bg-secondary text-neutral font-black text-3xl px-6 py-3 rounded-2xl shadow-lg mb-8">
+                      ${heroProducts[heroSlide]?.variants[0]?.price?.toLocaleString('es-CO') || '---'}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+                
+                <div className="flex flex-col sm:flex-row items-start gap-4">
+                  <button 
+                    onClick={() => scrollTo('menu')}
+                    className="bg-primary hover:bg-primary-dark text-white font-black py-4 px-10 rounded-full text-lg transition-all hover:scale-105 shadow-[0_0_30px_rgba(211,47,47,0.5)] flex items-center gap-3"
+                  >
+                    Ver Menú <ArrowRight className="w-5 h-5" />
+                  </button>
+                  
+                  <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-6 py-4 rounded-full border border-white/10">
+                    <span className="relative flex h-3 w-3">
+                      {openStatus && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+                      <span className={`relative inline-flex rounded-full h-3 w-3 ${openStatus ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    </span>
+                    <span className="text-white font-bold text-sm">
+                      {openStatus ? 'ABIERTO AHORA' : 'CERRADO'}
+                    </span>
+                    <span className="text-white/50 text-sm ml-1">• 5PM – 12AM</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* Flechas de navegación */}
+        <button 
+          onClick={() => setHeroSlide((prev) => (prev - 1 + heroImages.length) % heroImages.length)}
+          className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center transition-all border border-white/20 hover:scale-110"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <button 
+          onClick={() => setHeroSlide((prev) => (prev + 1) % heroImages.length)}
+          className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center transition-all border border-white/20 hover:scale-110"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+        </button>
+
+        {/* Dots indicadores + Scroll */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-6">
+          <div className="flex items-center gap-2.5">
+            {heroImages.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setHeroSlide(i)}
+                className={`rounded-full transition-all duration-500 ${
+                  i === heroSlide 
+                    ? 'w-10 h-3 bg-secondary shadow-[0_0_10px_rgba(255,179,0,0.6)]' 
+                    : 'w-3 h-3 bg-white/40 hover:bg-white/70'
+                }`}
+              />
+            ))}
+          </div>
+          <div className="text-white/30 animate-bounce">
+            <ArrowDown className="w-5 h-5" />
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ NOSOTROS ═══════════════ */}
+      <section id="nosotros" className="py-24 bg-white relative overflow-hidden">
+        {/* Decoración */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-primary"></div>
+        
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <span className="text-primary font-bold uppercase tracking-[0.2em] text-sm">Conócenos</span>
+            <h2 className="text-4xl md:text-5xl font-black text-neutral mt-3">Sobre <span className="text-primary">Trucco</span></h2>
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            {/* Collage de imágenes */}
+            <div className="w-full lg:w-1/2 relative">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <img src="/images/picadas.jpeg" alt="Picadas" className="w-full h-52 object-cover rounded-3xl shadow-lg" />
+                  <img src="/images/carta.jpeg" alt="Menú" className="w-full h-36 object-cover rounded-3xl shadow-lg" />
+                </div>
+                <div className="space-y-4 mt-8">
+                  <img src="/images/burritos.jpeg" alt="Burritos" className="w-full h-36 object-cover rounded-3xl shadow-lg" />
+                  <img src="/images/perro-caliente.jpeg" alt="Perro Caliente" className="w-full h-52 object-cover rounded-3xl shadow-lg" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Texto descriptivo */}
+            <div className="w-full lg:w-1/2">
+              <h3 className="text-3xl md:text-4xl font-black text-neutral mb-6 leading-tight">
+                Donde el hambre se convierte en <span className="text-secondary">satisfacción</span>
+              </h3>
+              <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+                En <strong className="text-primary">Comidas Rápidas Trucco</strong> no hacemos comida normal. Preparamos cada plato con ingredientes frescos, salsas de la casa y porciones generosas. Nuestro objetivo es simple: que te vayas feliz y quieras volver.
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+                <div className="flex items-start gap-4 bg-cream p-5 rounded-2xl">
+                  <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">
+                    <ChefHat className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-neutral">Preparación Fresca</h5>
+                    <p className="text-gray-500 text-sm mt-1">Todo se prepara al momento de tu pedido.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 bg-cream p-5 rounded-2xl">
+                  <div className="w-12 h-12 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center shrink-0">
+                    <Star className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-neutral">Calidad Premium</h5>
+                    <p className="text-gray-500 text-sm mt-1">Los mejores ingredientes, todos los días.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 bg-cream p-5 rounded-2xl">
+                  <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-neutral">Horario Nocturno</h5>
+                    <p className="text-gray-500 text-sm mt-1">Abiertos de 5:00 PM a 12:00 AM.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 bg-cream p-5 rounded-2xl">
+                  <div className="w-12 h-12 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center shrink-0">
+                    <Heart className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-neutral">Porciones Generosas</h5>
+                    <p className="text-gray-500 text-sm mt-1">Servimos con amor y en cantidad.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Horario completo */}
+              <div className="bg-neutral text-white p-6 rounded-2xl">
+                <h4 className="font-bold text-secondary mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5" /> Horario de Atención
+                </h4>
+                <div className="grid grid-cols-2 gap-y-2 text-sm">
+                  {['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map(day => (
+                    <div key={day} className="flex justify-between pr-4">
+                      <span className="text-gray-400">{day}</span>
+                      <span className="font-bold text-white">5PM – 12AM</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-3">
+                  <span className="relative flex h-3 w-3">
+                    {openStatus && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+                    <span className={`relative inline-flex rounded-full h-3 w-3 ${openStatus ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                  </span>
+                  <span className="font-bold text-sm">{openStatus ? '🟢 ESTAMOS ABIERTOS' : '🔴 CERRADO AHORA'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ MENÚ ═══════════════ */}
+      <main id="menu" className="w-full bg-cream py-24 relative">
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-secondary via-primary to-secondary"></div>
+        
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-10">
+            <span className="text-primary font-bold uppercase tracking-[0.2em] text-sm">Descubre</span>
+            <h3 className="text-4xl md:text-5xl font-black text-neutral mt-3">Nuestro <span className="text-secondary">Menú</span></h3>
+            <p className="text-gray-500 mt-4 text-lg max-w-lg mx-auto">Elige tus favoritos y agrégalos al carrito. Tu pedido llegará directo a nuestro WhatsApp.</p>
+          </div>
+
+          {/* Filtros de Categoría */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all ${
+                  activeCategory === category 
+                    ? 'bg-primary text-white shadow-lg shadow-primary/30' 
+                    : 'bg-white text-gray-500 border-2 border-cream-dark hover:border-primary/50 hover:text-primary'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <AnimatePresence mode="popLayout">
+              {filteredProducts.map((product) => (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                  key={product.id}
+                >
+                  <ProductCard product={product} onAdd={addToCart} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      </main>
+
+      {/* ═══════════════ CONTACTO / QR ═══════════════ */}
+      <section id="contacto" className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-primary"></div>
+        
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <span className="text-primary font-bold uppercase tracking-[0.2em] text-sm">Contacto</span>
+            <h3 className="text-4xl md:text-5xl font-black text-neutral mt-3">Haz Tu <span className="text-secondary">Pedido</span></h3>
+          </div>
+
+          <div className="bg-neutral rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-2xl relative">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-primary rounded-full filter blur-[150px] opacity-10"></div>
+            
+            <div className="md:w-3/5 p-10 md:p-16 flex flex-col justify-center relative z-10">
+              <h3 className="text-3xl md:text-4xl font-black text-white mb-6">
+                Sin complicaciones, <span className="text-secondary">rápido y fácil</span>
+              </h3>
+              <p className="text-gray-400 mb-10 text-lg leading-relaxed">
+                Arma tu pedido en nuestra web, confirma tus datos y te lo enviamos organizado por WhatsApp para coordinar la entrega.
+              </p>
+              
+              <ul className="space-y-5">
+                {[
+                  { step: '1', text: 'Explora el menú y elige tus platos' },
+                  { step: '2', text: 'Revisa tu carrito y ajusta cantidades' },
+                  { step: '3', text: 'Llena tus datos de entrega' },
+                  { step: '4', text: '¡Listo! Se envía automático a WhatsApp' },
+                ].map(item => (
+                  <li key={item.step} className="flex items-center gap-4 text-white">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-black text-sm shrink-0">{item.step}</div>
+                    <span className="text-lg">{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="md:w-2/5 bg-gradient-to-br from-primary to-primary-dark p-10 md:p-12 flex flex-col items-center justify-center text-center relative z-10">
+              <h4 className="text-2xl font-bold text-white mb-2">¿Prefieres directo?</h4>
+              <p className="text-white/70 mb-8 text-sm">Escanea el QR o toca el botón</p>
+              
+              <div className="bg-white p-4 rounded-3xl mb-8 shadow-xl transform hover:scale-105 transition-transform duration-300">
+                <img src="/codigo qr.png" alt="QR WhatsApp" className="w-48 h-48 object-contain" />
+              </div>
+              
+              <a 
+                href={`https://wa.me/573000000000`} 
+                target="_blank" rel="noreferrer"
+                className="bg-white text-neutral font-bold py-4 px-8 rounded-full transition-all hover:scale-105 flex items-center gap-3 shadow-lg text-lg"
+              >
+                <Phone className="w-5 h-5 text-[#25D366]" /> Abrir WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ FOOTER ═══════════════ */}
+      <footer className="bg-neutral pt-16 pb-8 border-t-4 border-secondary">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div className="md:col-span-2">
+            <img src="/logo.png" alt="Trucco" className="h-24 md:h-32 mb-6 object-contain" />
+            <p className="text-gray-400 max-w-sm leading-relaxed">
+              El sabor que te mueve. Preparando las mejores hamburguesas y comidas rápidas de la ciudad, todos los días desde las 5:00 PM.
+            </p>
+          </div>
+          <div>
+            <h4 className="text-lg font-black mb-6 text-secondary">Navegación</h4>
+            <ul className="space-y-3 text-gray-400 font-medium">
+              {navLinks.map(link => (
+                <li key={link.name}>
+                  <button onClick={() => scrollTo(link.href)} className="hover:text-white transition-colors">{link.name}</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-lg font-black mb-6 text-secondary">Información</h4>
+            <ul className="space-y-4 text-gray-400">
+              <li className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-primary" />
+                <span>5:00 PM - 12:00 AM</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-primary" />
+                <span>Recogida y Domicilio</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Phone className="w-5 h-5 text-primary" />
+                <span>Pedidos por WhatsApp</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 text-center text-gray-600 text-sm font-medium pt-8 border-t border-white/10">
+          &copy; {new Date().getFullYear()} Comidas Rápidas Trucco — Todos los derechos reservados.
+        </div>
+      </footer>
+
+      {/* ═══════════════ MODALS ═══════════════ */}
+      <CartSidebar 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+        cart={cart} 
+        setCart={setCart}
+        onCheckout={() => {
+          setIsCartOpen(false);
+          setIsCheckoutOpen(true);
+        }}
+      />
+      <CheckoutModal 
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        cart={cart}
+      />
+    </div>
+  );
+}
+
+export default App;
