@@ -1,40 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Comidas Rápidas Trucco</title>
-    <style>
-      /* Ocultar cualquier badge o drawer de Netlify */
-      netlify-drawer,
-      [data-netlify-drawer],
-      #netlify-drawer,
-      .netlify-drawer,
-      [class*="netlify"],
-      [id*="netlify"],
-      iframe[src*="netlify"],
-      a[href*="netlify.com"] {
-        display: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-      }
-    </style>
-    <script>
-      (function() {
-        const removeBadge = () => {
-          document.querySelectorAll('netlify-drawer, [id*="netlify"], [class*="netlify"]').forEach(el => el.remove());
-          document.querySelectorAll('*').forEach(el => {
-            if (el.textContent && el.textContent.includes('Powered by Netlify')) {
-              el.remove();
-            }
-          });
-        };
-        window.addEventListener('DOMContentLoaded', removeBadge);
-        setInterval(removeBadge, 250);
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>
