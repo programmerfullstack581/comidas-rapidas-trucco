@@ -378,25 +378,49 @@ function App() {
                 </div>
               </div>
 
-              {/* Horario completo */}
-              <div className="bg-neutral text-white p-6 rounded-2xl">
-                <h4 className="font-bold text-secondary mb-4 flex items-center gap-2">
-                  <Clock className="w-5 h-5" /> Horario de Atención
-                </h4>
-                <div className="grid grid-cols-2 gap-y-2 text-sm">
-                  {['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map(day => (
-                    <div key={day} className="flex justify-between pr-4">
-                      <span className="text-gray-400">{day}</span>
-                      <span className="font-bold text-white">5PM – 12AM</span>
-                    </div>
-                  ))}
+              <div className="flex flex-col gap-6">
+                {/* Horario completo */}
+                <div className="bg-neutral text-white p-6 rounded-2xl">
+                  <h4 className="font-bold text-secondary mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5" /> Horario de Atención
+                  </h4>
+                  <div className="grid grid-cols-2 gap-y-2 text-sm">
+                    {['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map(day => (
+                      <div key={day} className="flex justify-between pr-4">
+                        <span className="text-gray-400">{day}</span>
+                        <span className="font-bold text-white">5PM – 12AM</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-3">
+                    <span className="relative flex h-3 w-3">
+                      {openStatus && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+                      <span className={`relative inline-flex rounded-full h-3 w-3 ${openStatus ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    </span>
+                    <span className="font-bold text-sm">{openStatus ? '🟢 ESTAMOS ABIERTOS' : '🔴 CERRADO AHORA'}</span>
+                  </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-3">
-                  <span className="relative flex h-3 w-3">
-                    {openStatus && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
-                    <span className={`relative inline-flex rounded-full h-3 w-3 ${openStatus ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                  </span>
-                  <span className="font-bold text-sm">{openStatus ? '🟢 ESTAMOS ABIERTOS' : '🔴 CERRADO AHORA'}</span>
+
+                {/* Ubicación Google Maps */}
+                <div className="bg-white border-2 border-cream-dark p-6 rounded-2xl shadow-sm flex flex-col h-[300px]">
+                  <h4 className="font-bold text-primary mb-3 flex items-center gap-2">
+                    <MapPin className="w-5 h-5" /> Dónde Encontrarnos
+                  </h4>
+                  <p className="text-gray-600 text-sm mb-4 font-medium">
+                    La Urbanización Emmanuel, Barrio 20 de Julio. Cartagena, Bolívar
+                  </p>
+                  <div className="flex-grow rounded-xl overflow-hidden bg-cream relative">
+                    <iframe 
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15694.757805178128!2d-75.5036102!3d10.3666667!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8ef625a6eb823cfb%3A0xc66fbfa9463c2603!2s20%20De%20Julio%2C%20Cartagena%20de%20Indias%2C%20Provincia%20de%20Cartagena%2C%20Bol%C3%ADvar!5e0!3m2!1ses!2sco!4v1714000000000!5m2!1ses!2sco" 
+                      width="100%" 
+                      height="100%" 
+                      style={{ border: 0, position: 'absolute', inset: 0 }} 
+                      allowFullScreen="" 
+                      loading="lazy" 
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Ubicación Comidas Rápidas Trucco"
+                    ></iframe>
+                  </div>
                 </div>
               </div>
             </div>
