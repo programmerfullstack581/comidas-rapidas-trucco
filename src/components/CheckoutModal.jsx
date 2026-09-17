@@ -86,7 +86,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
 
     const cleanPhone = formData.phone.replace(/\D/g, '');
     if (cleanPhone.length < 10) {
-      setErrorMessage('Por favor ingresa un número de teléfono válido de 10 dígitos (Ej: 304 304 0067).');
+      setErrorMessage('Por favor ingresa un número de teléfono válido de 10 dígitos (Ej: 310 123 4567).');
       return;
     }
 
@@ -339,7 +339,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
                       if (errorMessage) setErrorMessage('');
                     }}
                     className="w-full px-4 py-3.5 rounded-xl border-2 border-cream-dark bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-medium"
-                    placeholder="Ej. 304 304 0067" 
+                    placeholder="Ej. 310 123 4567" 
                   />
                 </div>
                 
