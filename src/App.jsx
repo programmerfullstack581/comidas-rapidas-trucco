@@ -315,10 +315,11 @@ function App() {
             <h2 className="text-4xl md:text-5xl font-black text-neutral mt-3">Sobre <span className="text-primary">Trucco</span></h2>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-center gap-16">
-            {/* Collage de imágenes */}
-            <div className="w-full lg:w-1/2 relative">
-              <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col lg:flex-row items-start gap-16">
+            {/* Columna Izquierda: Imágenes y Pagos */}
+            <div className="w-full lg:w-1/2 flex flex-col gap-10">
+              {/* Collage de imágenes */}
+              <div className="relative grid grid-cols-2 gap-4">
                 <div className="space-y-4">
                   <img src="/images/picadas.jpg" alt="Picadas" className="w-full h-52 object-cover rounded-3xl shadow-lg" />
                   <img src="/images/amburguesas.jpg" alt="Hamburguesas" className="w-full h-36 object-cover rounded-3xl shadow-lg" />
@@ -328,9 +329,32 @@ function App() {
                   <img src="/images/perro-caliente.jpeg" alt="Perro Caliente" className="w-full h-52 object-cover rounded-3xl shadow-lg" />
                 </div>
               </div>
+
+              {/* Información Importante (Envíos y Pagos) */}
+              <div className="bg-white border-2 border-cream-dark p-8 rounded-3xl shadow-sm flex flex-col">
+                <h4 className="font-bold text-primary text-xl mb-6 flex items-center gap-3">
+                  <Truck className="w-6 h-6" /> Envíos y Pagos
+                </h4>
+                
+                <div className="space-y-6">
+                  <div>
+                    <h5 className="font-black text-neutral text-lg mb-2">🛵 Zonas de Cobertura</h5>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                      Llegamos a gran parte de la zona sur occidente y zonas aledañas al 20 de Julio. ¡Pregunta por tu barrio al WhatsApp!
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h5 className="font-black text-neutral text-lg mb-2">💳 Medios de Pago</h5>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                      Recibimos pagos contra entrega en <strong>Efectivo</strong>, transferencias por <strong>Nequi</strong> y <strong>Daviplata</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            {/* Texto descriptivo */}
+            {/* Columna Derecha: Texto descriptivo y Horario/Mapa */}
             <div className="w-full lg:w-1/2">
               <h3 className="text-3xl md:text-4xl font-black text-neutral mb-6 leading-tight">
                 Donde el hambre se convierte en <span className="text-secondary">satisfacción</span>
@@ -401,50 +425,25 @@ function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Ubicación Google Maps */}
-                  <div className="bg-white border-2 border-cream-dark p-5 rounded-2xl shadow-sm flex flex-col h-[280px]">
-                    <h4 className="font-bold text-primary mb-2 flex items-center gap-2">
-                      <MapPin className="w-5 h-5" /> Ubicación
-                    </h4>
-                    <p className="text-gray-600 text-xs mb-3 font-medium leading-tight">
-                      Urbanización Emmanuel, 20 de Julio. Cartagena
-                    </p>
-                    <div className="flex-grow rounded-xl overflow-hidden bg-cream relative">
-                      <iframe 
-                        src="https://maps.google.com/maps?q=Urbanizaci%C3%B3n%20Emmanuel,%20Barrio%2020%20de%20Julio,%20Cartagena,%20Bol%C3%ADvar&t=&z=15&ie=UTF8&iwloc=&output=embed" 
-                        width="100%" 
-                        height="100%" 
-                        style={{ border: 0, position: 'absolute', inset: 0 }} 
-                        allowFullScreen="" 
-                        loading="lazy" 
-                        referrerPolicy="no-referrer-when-downgrade"
-                        title="Ubicación Comidas Rápidas Trucco"
-                      ></iframe>
-                    </div>
-                  </div>
-
-                  {/* Información Importante */}
-                  <div className="bg-white border-2 border-cream-dark p-5 rounded-2xl shadow-sm flex flex-col h-[280px]">
-                    <h4 className="font-bold text-primary mb-4 flex items-center gap-2">
-                      <Truck className="w-5 h-5" /> Envíos y Pagos
-                    </h4>
-                    
-                    <div className="space-y-4 flex-grow">
-                      <div>
-                        <h5 className="font-black text-neutral text-sm mb-1">🛵 Zonas de Cobertura</h5>
-                        <p className="text-gray-500 text-xs leading-relaxed">
-                          Llegamos a gran parte de la zona sur occidente y zonas aledañas al 20 de Julio. ¡Pregunta por tu barrio al WhatsApp!
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h5 className="font-black text-neutral text-sm mb-1">💳 Medios de Pago</h5>
-                        <p className="text-gray-500 text-xs leading-relaxed">
-                          Recibimos pagos contra entrega en <strong>Efectivo</strong>, transferencias por <strong>Nequi</strong> y <strong>Daviplata</strong>.
-                        </p>
-                      </div>
-                    </div>
+                {/* Ubicación Google Maps */}
+                <div className="bg-white border-2 border-cream-dark p-6 rounded-2xl shadow-sm flex flex-col h-[300px]">
+                  <h4 className="font-bold text-primary mb-3 flex items-center gap-2">
+                    <MapPin className="w-5 h-5" /> Ubicación
+                  </h4>
+                  <p className="text-gray-600 text-sm mb-4 font-medium leading-tight">
+                    La Urbanización Emmanuel, Barrio 20 de Julio. Cartagena, Bolívar
+                  </p>
+                  <div className="flex-grow rounded-xl overflow-hidden bg-cream relative">
+                    <iframe 
+                      src="https://maps.google.com/maps?q=Urbanizaci%C3%B3n%20Emmanuel,%20Barrio%2020%20de%20Julio,%20Cartagena,%20Bol%C3%ADvar&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                      width="100%" 
+                      height="100%" 
+                      style={{ border: 0, position: 'absolute', inset: 0 }} 
+                      allowFullScreen="" 
+                      loading="lazy" 
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Ubicación Comidas Rápidas Trucco"
+                    ></iframe>
                   </div>
                 </div>
               </div>
