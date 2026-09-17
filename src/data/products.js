@@ -96,7 +96,7 @@ export const products = [
     name: "Hamburguesa de Pollo",
     description: "Hamburguesa de pollo jugosa + papas a la francesa.",
     category: "Hamburguesas",
-    image: "/images/amburguesas.jpg",
+    image: "/images/menu/Hamburguesa de  pollo.png",
     variants: [
       { label: "Hamburguesa de Pollo + Papas", price: 23000 },
     ],
@@ -106,7 +106,7 @@ export const products = [
     name: "Hamburguesa de Cerdo",
     description: "Hamburguesa de cerdo a la plancha + papas a la francesa.",
     category: "Hamburguesas",
-    image: "/images/amburguesas.jpg",
+    image: "/images/menu/Hamburguesa de cerdo.png",
     variants: [
       { label: "Hamburguesa de Cerdo + Papas", price: 22000 },
     ],
