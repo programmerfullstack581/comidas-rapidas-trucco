@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { X, Send, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Send, CheckCircle, ShieldAlert, Loader2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WHATSAPP_NUMBER } from '../data/products';
+
+const COOLDOWN_SECONDS = 45; // 45 segundos de espera entre pedidos
 
 export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder }) {
   const [formData, setFormData] = useState({
@@ -13,38 +15,110 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
   });
   
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+  // Comprobar y gestionar el temporizador anti-spam (Rate Limiting)
+  useEffect(() => {
+    const checkCooldown = () => {
+      const lastOrderTime = localStorage.getItem('trucco_last_order_timestamp');
+      if (lastOrderTime) {
+        const elapsed = Math.floor((Date.now() - parseInt(lastOrderTime, 10)) / 1000);
+        if (elapsed < COOLDOWN_SECONDS) {
+          setCooldownRemaining(COOLDOWN_SECONDS - elapsed);
+        } else {
+          setCooldownRemaining(0);
+        }
+      }
+    };
+
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    let text = `*¡Hola Trucco!* 👋%0A%0AQuiero realizar el siguiente pedido:%0A%0A`;
-    
-    text += `🍔 *PRODUCTOS*%0A`;
-    cart.forEach(item => {
-      const variantText = item.variantLabel && item.variantLabel !== item.name ? ` (${item.variantLabel})` : '';
-      text += `— ${item.quantity}x ${item.name}${variantText} → $${(item.price * item.quantity).toLocaleString('es-CO')}%0A`;
-    });
-    
-    text += `%0A💰 *TOTAL: $${total.toLocaleString('es-CO')}*%0A%0A`;
-    text += `👤 *Cliente:* ${formData.name}%0A`;
-    text += `📱 *Teléfono:* ${formData.phone}%0A`;
-    text += `📍 *Tipo:* ${formData.orderType === 'domicilio' ? '🛵 Domicilio' : '🏪 Recoger en el punto'}%0A`;
-    if (formData.orderType === 'domicilio' && formData.address) {
-      text += `🏠 *Dirección:* ${formData.address}%0A`;
-    }
-    if (formData.notes) {
-      text += `📝 *Observaciones:* ${formData.notes}%0A`;
-    }
-    text += `%0A¡Gracias! 🙌`;
+    setErrorMessage('');
 
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
-    window.open(whatsappUrl, '_blank');
-    
-    setIsSubmitted(true);
-    if (onConfirmOrder) {
-      onConfirmOrder(formData);
+    // 1. Verificación de seguridad: Cooldown activo
+    if (cooldownRemaining > 0) {
+      setErrorMessage(`⚠️ Por favor espera ${cooldownRemaining}s antes de enviar otro pedido.`);
+      return;
+    }
+
+    // 2. Verificación de seguridad: Evitar múltiples clics simultáneos (Debounce/Lock)
+    if (isSubmitting) return;
+
+    // 3. Verificación de carrito vacío
+    if (!cart || cart.length === 0) {
+      setErrorMessage('El carrito está vacío. Agrega productos para continuar.');
+      return;
+    }
+
+    // 4. Validaciones estrictas de datos
+    const cleanName = formData.name.trim();
+    if (cleanName.length < 3) {
+      setErrorMessage('Por favor escribe tu nombre completo (mínimo 3 letras).');
+      return;
+    }
+
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      setErrorMessage('Por favor ingresa un número de teléfono válido de 10 dígitos (Ej: 304 304 0067).');
+      return;
+    }
+
+    if (formData.orderType === 'domicilio') {
+      const cleanAddress = formData.address.trim();
+      if (cleanAddress.length < 6) {
+        setErrorMessage('Por favor ingresa una dirección de entrega completa.');
+        return;
+      }
+    }
+
+    // Bloquear el botón inmediatamente para proteger de spam / spam-clicking
+    setIsSubmitting(true);
+
+    try {
+      let text = `*¡Hola Trucco!* 👋%0A%0AQuiero realizar el siguiente pedido:%0A%0A`;
+      
+      text += `🍔 *PRODUCTOS*%0A`;
+      cart.forEach(item => {
+        const variantText = item.variantLabel && item.variantLabel !== item.name ? ` (${item.variantLabel})` : '';
+        text += `— ${item.quantity}x ${item.name}${variantText} → $${(item.price * item.quantity).toLocaleString('es-CO')}%0A`;
+      });
+      
+      text += `%0A💰 *TOTAL: $${total.toLocaleString('es-CO')}*%0A%0A`;
+      text += `👤 *Cliente:* ${cleanName}%0A`;
+      text += `📱 *Teléfono:* ${cleanPhone}%0A`;
+      text += `📍 *Tipo:* ${formData.orderType === 'domicilio' ? '🛵 Domicilio' : '🏪 Recoger en el punto'}%0A`;
+      if (formData.orderType === 'domicilio' && formData.address) {
+        text += `🏠 *Dirección:* ${formData.address.trim()}%0A`;
+      }
+      if (formData.notes) {
+        text += `📝 *Observaciones:* ${formData.notes.trim()}%0A`;
+      }
+      text += `%0A¡Gracias! 🙌`;
+
+      // Registrar timestamp en almacenamiento local para anti-spam persistente
+      localStorage.setItem('trucco_last_order_timestamp', Date.now().toString());
+      setCooldownRemaining(COOLDOWN_SECONDS);
+
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
+      window.open(whatsappUrl, '_blank');
+      
+      setIsSubmitted(true);
+      if (onConfirmOrder) {
+        onConfirmOrder(formData);
+      }
+    } catch (err) {
+      setErrorMessage('Ocurrió un error al procesar el pedido. Intenta nuevamente.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -53,6 +127,7 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
       setIsSubmitted(false);
       setFormData({ name: '', phone: '', orderType: 'recoger', address: '', notes: '' });
     }
+    setErrorMessage('');
     onClose();
   };
 
@@ -124,18 +199,53 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
                   </div>
                 </div>
 
+                {/* Banner de alerta de cooldown / rate-limiting */}
+                {cooldownRemaining > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 text-amber-800">
+                    <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="text-xs">
+                      <strong className="block font-bold mb-0.5">Control anti-saturación activo:</strong>
+                      Para evitar spam y pedidos duplicados en WhatsApp, por favor espera <strong>{cooldownRemaining}s</strong> antes de enviar un nuevo pedido.
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje de error de validación */}
+                {errorMessage && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-3.5 rounded-xl text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-bold text-neutral mb-1.5">Tu Nombre</label>
-                  <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
+                  <input 
+                    required 
+                    type="text" 
+                    value={formData.name} 
+                    onChange={e => {
+                      setFormData({...formData, name: e.target.value});
+                      if (errorMessage) setErrorMessage('');
+                    }}
                     className="w-full px-4 py-3.5 rounded-xl border-2 border-cream-dark bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-medium"
-                    placeholder="Ej. Juan Pérez" />
+                    placeholder="Ej. Juan Pérez" 
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-neutral mb-1.5">Teléfono</label>
-                  <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
+                  <label className="block text-sm font-bold text-neutral mb-1.5">Teléfono (WhatsApp)</label>
+                  <input 
+                    required 
+                    type="tel" 
+                    value={formData.phone} 
+                    onChange={e => {
+                      setFormData({...formData, phone: e.target.value});
+                      if (errorMessage) setErrorMessage('');
+                    }}
                     className="w-full px-4 py-3.5 rounded-xl border-2 border-cream-dark bg-white focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-medium"
-                    placeholder="Ej. 310 123 4567" />
+                    placeholder="Ej. 304 304 0067" 
+                  />
                 </div>
                 
                 <div>
@@ -155,23 +265,55 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
                 {formData.orderType === 'domicilio' && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
                     <label className="block text-sm font-bold text-neutral mb-1.5">Dirección de Entrega</label>
-                    <input required type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})}
+                    <input 
+                      required 
+                      type="text" 
+                      value={formData.address} 
+                      onChange={e => {
+                        setFormData({...formData, address: e.target.value});
+                        if (errorMessage) setErrorMessage('');
+                      }}
                       className="w-full px-4 py-3.5 rounded-xl border-2 border-cream-dark bg-white focus:ring-2 focus:ring-primary outline-none font-medium"
-                      placeholder="Ej. Calle 123 #45-67, Barrio..." />
+                      placeholder="Ej. Calle 123 #45-67, Barrio..." 
+                    />
                   </motion.div>
                 )}
 
                 <div>
                   <label className="block text-sm font-bold text-neutral mb-1.5">Notas adicionales (Opcional)</label>
-                  <textarea value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}
+                  <textarea 
+                    value={formData.notes} 
+                    onChange={e => setFormData({...formData, notes: e.target.value})}
                     className="w-full px-4 py-3 rounded-xl border-2 border-cream-dark bg-white focus:ring-2 focus:ring-primary outline-none resize-none font-medium"
-                    placeholder="Ej. Sin cebolla, salsas aparte..." rows="2" />
+                    placeholder="Ej. Sin cebolla, salsas aparte..." rows="2" 
+                  />
                 </div>
 
-                <button type="submit"
-                  className="w-full py-4 rounded-xl font-black text-lg text-white bg-[#25D366] hover:bg-[#1da851] transition-colors flex items-center justify-center gap-3 shadow-lg shadow-green-500/30">
-                  <Send className="w-5 h-5" />
-                  Confirmar y Enviar por WhatsApp
+                <button 
+                  type="submit"
+                  disabled={cooldownRemaining > 0 || isSubmitting}
+                  className={`w-full py-4 rounded-xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-lg ${
+                    cooldownRemaining > 0 || isSubmitting
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                      : 'text-white bg-[#25D366] hover:bg-[#1da851] shadow-green-500/30 active:scale-[0.98]'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Procesando pedido...
+                    </>
+                  ) : cooldownRemaining > 0 ? (
+                    <>
+                      <ShieldAlert className="w-5 h-5 text-amber-600" />
+                      Espera {cooldownRemaining}s para volver a pedir
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Confirmar y Enviar por WhatsApp
+                    </>
+                  )}
                 </button>
               </form>
             )}
