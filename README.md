@@ -23,8 +23,9 @@ Este es el repositorio oficial de la página web de **Comidas Rápidas Trucco**.
 
 - **Nombre**: Comidas Rápidas Trucco
 - **Especialidades**: Perro Todas las Carnes, Mega Picada, Burrito Especial, Hamburguesas.
+- **Dirección**: La Urbanización Emmanuel, Barrio 20 de Julio. Cartagena, Bolívar.
 - **Horario de Atención**: Lunes a Domingo, de 5:00 PM a 12:00 AM.
-- **Contacto de Domicilios**: +57 3171922866
+- **Contacto de Domicilios**: +57 3043040067
 
 ## 💻 Instalación y Uso Local
 

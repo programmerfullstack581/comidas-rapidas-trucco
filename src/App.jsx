@@ -533,9 +533,9 @@ function App() {
                 <Clock className="w-5 h-5 text-primary" />
                 <span>5:00 PM - 12:00 AM</span>
               </li>
-              <li className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-primary" />
-                <span>Recogida y Domicilio</span>
+              <li className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-primary shrink-0 mt-1" />
+                <span>La Urbanización Emmanuel<br/>Barrio 20 de Julio<br/>Cartagena, Bolívar</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-primary" />
