@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════
 // DATOS REALES - COMIDAS RÁPIDAS TRUCCO
-// Carta oficial con precios reales
+// Carta oficial con precios reales e imágenes individuales
 // WhatsApp: 3043040067 (Pruebas)
 // ═══════════════════════════════════════════════════
 
@@ -34,7 +34,7 @@ export const products = [
     name: "Perro Ranchero",
     description: "Perro caliente ranchero con tocineta, queso fundido y salsas especiales.",
     category: "Perros Calientes",
-    image: "/images/perro-caliente.jpeg",
+    image: "/images/menu/perro ranchero.png",
     variants: [
       { label: "Perro Ranchero", price: 18000 },
     ],
@@ -44,7 +44,7 @@ export const products = [
     name: "Perro Suizo",
     description: "Perro caliente suizo con tocineta, queso suizo gratinado y salsas.",
     category: "Perros Calientes",
-    image: "/images/perro-caliente.jpeg",
+    image: "/images/menu/Perro Suizo.png",
     variants: [
       { label: "Perro Suizo", price: 23000 },
     ],
@@ -54,7 +54,7 @@ export const products = [
     name: "Perro Mixto",
     description: "Perro caliente mixto con tocineta, mezcla de carnes y salsas de la casa.",
     category: "Perros Calientes",
-    image: "/images/perro-caliente.jpeg",
+    image: "/images/menu/Perro Mixto.png",
     variants: [
       { label: "Perro Mixto", price: 20000 },
     ],
@@ -64,7 +64,7 @@ export const products = [
     name: "Perro Chori Perro",
     description: "Perro caliente con chorizo, tocineta y salsas especiales.",
     category: "Perros Calientes",
-    image: "/images/perro-caliente.jpeg",
+    image: "/images/menu/perro chori perro.png",
     variants: [
       { label: "Perro Chori Perro", price: 20000 },
     ],
@@ -74,7 +74,7 @@ export const products = [
     name: "Perro Americano",
     description: "Perro caliente americano con tocineta, queso cheddar y salsas.",
     category: "Perros Calientes",
-    image: "/images/perro-caliente.jpeg",
+    image: "/images/menu/perro americano.png",
     variants: [
       { label: "Perro Americano", price: 18000 },
     ],
@@ -84,7 +84,7 @@ export const products = [
     name: "Perro Todas las Carnes (Especial)",
     description: "¡El más cargado! Perro con todas las carnes, tocineta y salsas de la casa.",
     category: "Perros Calientes",
-    image: "/images/perro-caliente.jpeg",
+    image: "/images/menu/Perro Todas las Carnes (Especial).png",
     variants: [
       { label: "Perro Todas las Carnes", price: 28000 },
     ],
@@ -128,7 +128,7 @@ export const products = [
     name: "Chori Papa",
     description: "Papas francesas con chorizo y salsas de la casa.",
     category: "Salchipapas",
-    image: "/images/salchipapa.jpg",
+    image: "/images/menu/Chori Papa.jpg",
     variants: [
       { label: "Chori Papa", price: 20000 },
     ],
@@ -138,7 +138,7 @@ export const products = [
     name: "Salchipapas Suiza",
     description: "Papas francesas con salchicha y queso suizo gratinado.",
     category: "Salchipapas",
-    image: "/images/salchipapa.jpg",
+    image: "/images/menu/salchipapa suiza.jpg",
     variants: [
       { label: "Salchipapas Suiza (chorizo + suiza)", price: 22000 },
       { label: "Salchipapas Suiza Especial", price: 25000 },
@@ -161,7 +161,7 @@ export const products = [
     name: "Burrito de Cerdo",
     description: "Burrito relleno de cerdo a la plancha, queso y salsas.",
     category: "Burritos",
-    image: "/images/burritos.jpeg",
+    image: "/images/menu/Burrito de Cerdo.jpg",
     variants: [
       { label: "Burrito de Cerdo", price: 22000 },
     ],
@@ -171,7 +171,7 @@ export const products = [
     name: "Burrito de Carne",
     description: "Burrito relleno de carne de res, queso, vegetales y salsas.",
     category: "Burritos",
-    image: "/images/burritos.jpeg",
+    image: "/images/menu/Burrito de Carne.jpg",
     variants: [
       { label: "Burrito de Carne", price: 25000 },
     ],
@@ -181,7 +181,7 @@ export const products = [
     name: "Burrito Especial Todas las Carnes",
     description: "¡El más completo! Burrito con todas las carnes, queso y salsas.",
     category: "Burritos",
-    image: "/images/burritos.jpeg",
+    image: "/images/menu/Burrito Especial Todas las Carnes.jpg",
     variants: [
       { label: "Burrito Especial Todas las Carnes", price: 28000 },
     ],
@@ -207,7 +207,7 @@ export const products = [
     name: "Patacón Especial",
     description: "Patacón cargado con carne, pollo o cerdo, queso y salsas.",
     category: "Patacones",
-    image: "/images/picadas.jpg",
+    image: "/images/menu/Patacón Especial.jpg",
     variants: [
       { label: "Patacón Especial (carne, pollo o cerdo)", price: 25000 },
       { label: "Patacón Sencillo (pollo o cerdo)", price: 20000 },
@@ -220,7 +220,7 @@ export const products = [
     name: "Mega Picada para 6 Personas",
     description: "Carne, pollo, butifarra, chorizo, papas a la francesa, salchichón cervecero, zumu, patacón y salsa de la casa. ¡Un sabor que lo tiene todo!",
     category: "Mega Picada",
-    image: "/images/picadas.jpg",
+    image: "/images/menu/Mega Picada para 6 Personas.jpg",
     variants: [
       { label: "Mega Picada (6 personas)", price: 100000 },
     ],

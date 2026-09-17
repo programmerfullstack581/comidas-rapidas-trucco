@@ -24,3 +24,13 @@ body {
 ::selection {
   @apply bg-secondary text-neutral;
 }
+
+/* Ocultar barra/drawer de Netlify */
+[data-netlify-drawer],
+#netlify-drawer,
+.netlify-drawer,
+iframe[src*="netlify"],
+div[class*="netlify-feedback"],
+div[id*="netlify-drawer"] {
+  display: none !important;
+}

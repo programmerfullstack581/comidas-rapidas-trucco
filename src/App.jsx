@@ -34,8 +34,8 @@ function App() {
 
   const heroImages = heroProducts.map(p => p.image);
 
-  const filteredProducts = activeCategory === "Todos" 
-    ? products 
+  const filteredProducts = activeCategory === "Todos"
+    ? products
     : products.filter(p => p.category === activeCategory);
 
   // Auto-avance del carrusel cada 10 segundos
@@ -94,7 +94,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
-      
+
       {/* ═══════════════ NAVBAR ═══════════════ */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrolled ? 'bg-neutral shadow-2xl' : 'bg-transparent'}`}>
         {/* Top bar */}
@@ -103,26 +103,25 @@ function App() {
             🔥 Abiertos todos los días de 5:00 PM a 12:00 AM — ¡Haz tu pedido ahora!
           </div>
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <div className="cursor-pointer z-50 relative" onClick={() => scrollTo('inicio')}>
-            <img 
-              src="/logo.png" 
-              alt="Trucco" 
-              className={`transition-all duration-300 object-contain ${scrolled ? 'h-14' : 'h-20 md:h-24 drop-shadow-lg'}`} 
+            <img
+              src="/logo.png"
+              alt="Trucco"
+              className={`transition-all duration-300 object-contain ${scrolled ? 'h-14' : 'h-20 md:h-24 drop-shadow-lg'}`}
             /></div>
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1 bg-white/10 backdrop-blur-md px-2 py-2 rounded-full border border-white/10">
             {navLinks.map((link) => (
-              <button 
-                key={link.name} 
+              <button
+                key={link.name}
                 onClick={() => scrollTo(link.href)}
-                className={`font-bold px-5 py-2.5 rounded-full text-sm uppercase tracking-wider transition-all ${
-                  activeSection === link.href
-                    ? 'bg-primary text-white shadow-md'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}
+                className={`font-bold px-5 py-2.5 rounded-full text-sm uppercase tracking-wider transition-all ${activeSection === link.href
+                  ? 'bg-primary text-white shadow-md'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+                  }`}
               >
                 {link.name}
               </button>
@@ -131,14 +130,14 @@ function App() {
 
           <div className="flex items-center gap-3 z-50 relative">
             {orderHistory.length > 0 && (
-              <button 
+              <button
                 onClick={() => setIsHistoryOpen(true)}
                 className="hidden sm:flex items-center gap-2 p-3 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/20 transition-all font-bold text-sm border border-white/10"
               >
                 <Clock className="w-5 h-5" /> Mis Pedidos
               </button>
             )}
-            <button 
+            <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-3 bg-primary text-white rounded-full hover:bg-primary-dark transition-all hover:scale-105 shadow-lg shadow-primary/30 flex items-center gap-2"
             >
@@ -154,8 +153,8 @@ function App() {
                 </>
               )}
             </button>
-            
-            <button 
+
+            <button
               className="lg:hidden p-2 rounded-full text-white bg-white/10 backdrop-blur-sm border border-white/10"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
@@ -166,15 +165,15 @@ function App() {
 
         <AnimatePresence>
           {isMobileMenuOpen && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               className="absolute top-full left-0 w-full bg-neutral shadow-2xl flex flex-col py-4 px-6 z-40 border-t border-white/10"
             >
               {navLinks.map((link) => (
-                <button 
-                  key={link.name} 
+                <button
+                  key={link.name}
                   onClick={() => scrollTo(link.href)}
                   className="py-4 text-left font-black text-xl text-white border-b border-white/10 last:border-0 hover:text-secondary transition-colors"
                 >
@@ -188,7 +187,7 @@ function App() {
 
       {/* ═══════════════ HERO / CARRUSEL FULL-WIDTH ═══════════════ */}
       <section id="inicio" className="relative h-[85vh] md:h-screen overflow-hidden bg-neutral pt-[calc(2.25rem+5rem)]">
-        
+
         {/* Slides de fondo */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -199,9 +198,9 @@ function App() {
             transition={{ duration: 1 }}
             className="absolute inset-0 z-0"
           >
-            <img 
-              src={heroImages[heroSlide]} 
-              alt={`Producto Trucco ${heroSlide + 1}`} 
+            <img
+              src={heroImages[heroSlide]}
+              alt={`Producto Trucco ${heroSlide + 1}`}
               className="w-full h-full object-cover"
             />
             {/* Gradiente oscuro sobre la imagen para legibilidad */}
@@ -214,7 +213,7 @@ function App() {
         <div className="relative z-10 h-full flex items-center">
           <div className="max-w-7xl mx-auto px-6 w-full">
             <div className="max-w-2xl">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
@@ -223,7 +222,7 @@ function App() {
                   <Flame className="w-4 h-4" />
                   Comidas Rápidas Trucco
                 </div>
-                
+
                 {/* Nombre del producto actual */}
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -244,15 +243,15 @@ function App() {
                     </div>
                   </motion.div>
                 </AnimatePresence>
-                
+
                 <div className="flex flex-col sm:flex-row items-start gap-4">
-                  <button 
+                  <button
                     onClick={() => scrollTo('menu')}
                     className="bg-primary hover:bg-primary-dark text-white font-black py-4 px-10 rounded-full text-lg transition-all hover:scale-105 shadow-[0_0_30px_rgba(211,47,47,0.5)] flex items-center gap-3"
                   >
                     Ver Menú <ArrowRight className="w-5 h-5" />
                   </button>
-                  
+
                   <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-6 py-4 rounded-full border border-white/10">
                     <span className="relative flex h-3 w-3">
                       {openStatus && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
@@ -270,13 +269,13 @@ function App() {
         </div>
 
         {/* Flechas de navegación */}
-        <button 
+        <button
           onClick={() => setHeroSlide((prev) => (prev - 1 + heroImages.length) % heroImages.length)}
           className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center transition-all border border-white/20 hover:scale-110"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
         </button>
-        <button 
+        <button
           onClick={() => setHeroSlide((prev) => (prev + 1) % heroImages.length)}
           className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-full flex items-center justify-center transition-all border border-white/20 hover:scale-110"
         >
@@ -290,11 +289,10 @@ function App() {
               <button
                 key={i}
                 onClick={() => setHeroSlide(i)}
-                className={`rounded-full transition-all duration-500 ${
-                  i === heroSlide 
-                    ? 'w-10 h-3 bg-secondary shadow-[0_0_10px_rgba(255,179,0,0.6)]' 
-                    : 'w-3 h-3 bg-white/40 hover:bg-white/70'
-                }`}
+                className={`rounded-full transition-all duration-500 ${i === heroSlide
+                  ? 'w-10 h-3 bg-secondary shadow-[0_0_10px_rgba(255,179,0,0.6)]'
+                  : 'w-3 h-3 bg-white/40 hover:bg-white/70'
+                  }`}
               />
             ))}
           </div>
@@ -308,7 +306,7 @@ function App() {
       <section id="nosotros" className="py-24 bg-white relative overflow-hidden">
         {/* Decoración */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-primary"></div>
-        
+
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <span className="text-primary font-bold uppercase tracking-[0.2em] text-sm">Conócenos</span>
@@ -335,7 +333,7 @@ function App() {
                 <h4 className="font-bold text-primary text-xl mb-6 flex items-center gap-3">
                   <Truck className="w-6 h-6" /> Envíos y Pagos
                 </h4>
-                
+
                 <div className="space-y-6">
                   <div>
                     <h5 className="font-black text-neutral text-lg mb-2">🛵 Zonas de Cobertura</h5>
@@ -343,17 +341,18 @@ function App() {
                       Llegamos a gran parte de la zona sur occidente y zonas aledañas al 20 de Julio. ¡Pregunta por tu barrio al WhatsApp!
                     </p>
                   </div>
-                  
+
                   <div>
                     <h5 className="font-black text-neutral text-lg mb-2">💳 Medios de Pago</h5>
                     <p className="text-gray-500 text-sm leading-relaxed">
-                      Recibimos pagos contra entrega en <strong>Efectivo</strong>, transferencias por <strong>Nequi</strong> y <strong>Daviplata</strong>.
+                      Para confirmar tu pedido, es necesario realizar primero el pago por <strong>Nequi</strong>.
+                      Una vez realizado el pago, envíanos el comprobante por WhatsApp para validar y confirmar tu pedido.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Columna Derecha: Texto descriptivo y Horario/Mapa */}
             <div className="w-full lg:w-1/2">
               <h3 className="text-3xl md:text-4xl font-black text-neutral mb-6 leading-tight">
@@ -362,7 +361,7 @@ function App() {
               <p className="text-gray-600 text-lg mb-8 leading-relaxed">
                 En <strong className="text-primary">Comidas Rápidas Trucco</strong> no hacemos comida normal. Preparamos cada plato con ingredientes frescos, salsas de la casa y porciones generosas. Nuestro objetivo es simple: que te vayas feliz y quieras volver.
               </p>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
                 <div className="flex items-start gap-4 bg-cream p-5 rounded-2xl">
                   <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center shrink-0">
@@ -409,7 +408,7 @@ function App() {
                     <Clock className="w-5 h-5" /> Horario de Atención
                   </h4>
                   <div className="grid grid-cols-2 gap-y-2 text-sm">
-                    {['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map(day => (
+                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(day => (
                       <div key={day} className="flex justify-between pr-4">
                         <span className="text-gray-400">{day}</span>
                         <span className="font-bold text-white">5PM – 12AM</span>
@@ -426,7 +425,7 @@ function App() {
                 </div>
 
                 {/* Ubicación Google Maps */}
-                <div className="bg-white border-2 border-cream-dark p-6 rounded-2xl shadow-sm flex flex-col h-[300px]">
+                <div className="bg-white border-2 border-cream-dark p-5 rounded-2xl shadow-sm flex flex-col h-[400px]">
                   <h4 className="font-bold text-primary mb-3 flex items-center gap-2">
                     <MapPin className="w-5 h-5" /> Ubicación
                   </h4>
@@ -434,13 +433,13 @@ function App() {
                     La Urbanización Emmanuel, Barrio 20 de Julio. Cartagena, Bolívar
                   </p>
                   <div className="flex-grow rounded-xl overflow-hidden bg-cream relative">
-                    <iframe 
-                      src="https://maps.google.com/maps?q=Urbanizaci%C3%B3n%20Emmanuel,%20Barrio%2020%20de%20Julio,%20Cartagena,%20Bol%C3%ADvar&t=&z=15&ie=UTF8&iwloc=&output=embed" 
-                      width="100%" 
-                      height="100%" 
-                      style={{ border: 0, position: 'absolute', inset: 0 }} 
-                      allowFullScreen="" 
-                      loading="lazy" 
+                    <iframe
+                      src="https://maps.google.com/maps?q=Urbanizaci%C3%B3n%20Emmanuel,%20Barrio%2020%20de%20Julio,%20Cartagena,%20Bol%C3%ADvar&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0, position: 'absolute', inset: 0 }}
+                      allowFullScreen=""
+                      loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                       title="Ubicación Comidas Rápidas Trucco"
                     ></iframe>
@@ -448,14 +447,17 @@ function App() {
                 </div>
               </div>
             </div>
+
           </div>
+
         </div>
+
       </section>
 
       {/* ═══════════════ MENÚ ═══════════════ */}
       <main id="menu" className="w-full bg-cream py-24 relative">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-secondary via-primary to-secondary"></div>
-        
+
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
             <span className="text-primary font-bold uppercase tracking-[0.2em] text-sm">Descubre</span>
@@ -469,17 +471,16 @@ function App() {
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
-                className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all ${
-                  activeCategory === category 
-                    ? 'bg-primary text-white shadow-lg shadow-primary/30' 
-                    : 'bg-white text-gray-500 border-2 border-cream-dark hover:border-primary/50 hover:text-primary'
-                }`}
+                className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all ${activeCategory === category
+                  ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                  : 'bg-white text-gray-500 border-2 border-cream-dark hover:border-primary/50 hover:text-primary'
+                  }`}
               >
                 {category}
               </button>
             ))}
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence mode="popLayout">
               {filteredProducts.map((product) => (
@@ -490,6 +491,7 @@ function App() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.2 }}
                   key={product.id}
+                  className="h-full flex flex-col"
                 >
                   <ProductCard product={product} onAdd={addToCart} />
                 </motion.div>
@@ -502,7 +504,7 @@ function App() {
       {/* ═══════════════ CONTACTO / QR ═══════════════ */}
       <section id="contacto" className="py-24 bg-white relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-primary"></div>
-        
+
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-16">
             <span className="text-primary font-bold uppercase tracking-[0.2em] text-sm">Contacto</span>
@@ -511,7 +513,7 @@ function App() {
 
           <div className="bg-neutral rounded-[2rem] overflow-hidden flex flex-col md:flex-row shadow-2xl relative">
             <div className="absolute top-0 right-0 w-96 h-96 bg-primary rounded-full filter blur-[150px] opacity-10"></div>
-            
+
             <div className="md:w-3/5 p-10 md:p-16 flex flex-col justify-center relative z-10">
               <h3 className="text-3xl md:text-4xl font-black text-white mb-6">
                 Sin complicaciones, <span className="text-secondary">rápido y fácil</span>
@@ -519,7 +521,7 @@ function App() {
               <p className="text-gray-400 mb-10 text-lg leading-relaxed">
                 Arma tu pedido en nuestra web, confirma tus datos y te lo enviamos organizado por WhatsApp para coordinar la entrega.
               </p>
-              
+
               <ul className="space-y-5">
                 {[
                   { step: '1', text: 'Explora el menú y elige tus platos' },
@@ -538,13 +540,13 @@ function App() {
             <div className="md:w-2/5 bg-gradient-to-br from-primary to-primary-dark p-10 md:p-12 flex flex-col items-center justify-center text-center relative z-10">
               <h4 className="text-2xl font-bold text-white mb-2">¿Prefieres directo?</h4>
               <p className="text-white/70 mb-8 text-sm">Escanea el QR o toca el botón</p>
-              
+
               <div className="bg-white p-4 rounded-3xl mb-8 shadow-xl transform hover:scale-105 transition-transform duration-300">
                 <img src="/codigo qr.png" alt="QR WhatsApp" className="w-48 h-48 object-contain" />
               </div>
-              
-              <a 
-                href={`https://wa.me/${WHATSAPP_NUMBER}`} 
+
+              <a
+                href={`https://wa.me/${WHATSAPP_NUMBER}`}
                 target="_blank" rel="noreferrer"
                 className="bg-white text-neutral font-bold py-4 px-8 rounded-full transition-all hover:scale-105 flex items-center gap-3 shadow-lg text-lg"
               >
@@ -583,7 +585,7 @@ function App() {
               </li>
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-primary shrink-0 mt-1" />
-                <span>La Urbanización Emmanuel<br/>Barrio 20 de Julio<br/>Cartagena, Bolívar</span>
+                <span>La Urbanización Emmanuel<br />Barrio 20 de Julio<br />Cartagena, Bolívar</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-primary" />
@@ -598,17 +600,17 @@ function App() {
       </footer>
 
       {/* ═══════════════ MODALS ═══════════════ */}
-      <CartSidebar 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
-        cart={cart} 
+      <CartSidebar
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cart}
         setCart={setCart}
         onCheckout={() => {
           setIsCartOpen(false);
           setIsCheckoutOpen(true);
         }}
       />
-      <CheckoutModal 
+      <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         cart={cart}
@@ -619,12 +621,12 @@ function App() {
       <AnimatePresence>
         {isHistoryOpen && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsHistoryOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-            
-            <motion.div 
+
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
