@@ -208,7 +208,7 @@ function App() {
       </header>
 
       {/* ═══════════════ HERO / CARRUSEL FULL-WIDTH ═══════════════ */}
-      <section id="inicio" className="relative h-[85vh] md:h-screen overflow-hidden bg-neutral pt-[calc(2.25rem+5rem)]">
+      <section id="inicio" className="relative min-h-[660px] lg:min-h-screen overflow-hidden bg-neutral flex items-center">
 
         {/* Slides de fondo */}
         <AnimatePresence mode="wait">
@@ -231,37 +231,40 @@ function App() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Contenido superpuesto */}
-        <div className="relative z-10 h-full flex items-center pt-24 sm:pt-28 pb-12">
+        {/* Contenido superpuesto con anclaje superior estable */}
+        <div className="relative z-10 w-full pt-36 sm:pt-40 lg:pt-44 pb-16">
           <div className="max-w-7xl mx-auto px-6 w-full">
             <div className="max-w-2xl">
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <div className="inline-flex items-center gap-2 bg-secondary/20 border border-secondary/40 text-secondary px-5 py-2.5 rounded-full font-bold mb-8 text-sm uppercase tracking-widest backdrop-blur-sm">
+                <div className="inline-flex items-center gap-2 bg-secondary/20 border border-secondary/40 text-secondary px-4 py-2 rounded-full font-bold mb-4 sm:mb-6 text-xs sm:text-sm uppercase tracking-widest backdrop-blur-sm">
                   <Flame className="w-4 h-4" />
                   Comidas Rápidas Trucco
                 </div>
 
-                {/* Nombre del producto actual */}
+                {/* Nombre del producto actual con altura contenida y estable */}
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={`info-${heroSlide}`}
-                    initial={{ opacity: 0, x: -30 }}
+                    initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 30 }}
-                    transition={{ duration: 0.5 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.4 }}
+                    className="min-h-[220px] sm:min-h-[260px] flex flex-col justify-start"
                   >
-                    <h1 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-black text-white mb-4 leading-[1.05] drop-shadow-lg">
+                    <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white mb-3 leading-[1.1] drop-shadow-lg">
                       {heroProducts[heroSlide]?.name || 'Comidas Rápidas Trucco'}
                     </h1>
-                    <p className="text-gray-300 text-lg lg:text-xl mb-4 max-w-lg leading-relaxed drop-shadow-md">
+                    <p className="text-gray-300 text-base sm:text-lg mb-4 max-w-lg leading-relaxed drop-shadow-md line-clamp-2">
                       {heroProducts[heroSlide]?.description || 'Las mejores hamburguesas y salchipapas de la ciudad.'}
                     </p>
-                    <div className="inline-flex items-center gap-3 bg-secondary text-neutral font-black text-3xl px-6 py-3 rounded-2xl shadow-lg mb-8">
-                      ${heroProducts[heroSlide]?.variants[0]?.price?.toLocaleString('es-CO') || '---'}
+                    <div>
+                      <div className="inline-flex items-center gap-3 bg-secondary text-neutral font-black text-2xl sm:text-3xl px-5 py-2.5 rounded-2xl shadow-lg mb-6">
+                        ${heroProducts[heroSlide]?.variants[0]?.price?.toLocaleString('es-CO') || '---'}
+                      </div>
                     </div>
                   </motion.div>
                 </AnimatePresence>
