@@ -119,18 +119,19 @@ function App() {
       {/* ═══════════════ NAVBAR ═══════════════ */}
       <header className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrolled ? 'bg-neutral shadow-2xl' : 'bg-transparent'}`}>
         {/* Top bar */}
-        <div className={`transition-all duration-300 overflow-hidden ${scrolled ? 'h-0' : 'h-9'}`}>
-          <div className="bg-secondary text-neutral text-center py-2 text-sm font-bold tracking-wide">
-            🔥 Abiertos todos los días de 5:00 PM a 12:00 AM — ¡Haz tu pedido ahora!
+        <div className={`transition-all duration-300 overflow-hidden ${scrolled ? 'max-h-0 opacity-0' : 'max-h-14 opacity-100'}`}>
+          <div className="bg-secondary text-neutral text-center py-1.5 px-3 text-xs sm:text-sm font-black tracking-wide">
+            <span className="inline sm:hidden">🔥 Abiertos 5:00 PM a 12:00 AM — ¡Pide ya!</span>
+            <span className="hidden sm:inline">🔥 Abiertos todos los días de 5:00 PM a 12:00 AM — ¡Haz tu pedido ahora!</span>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 h-16 sm:h-20 flex items-center justify-between">
           <div className="cursor-pointer z-50 relative" onClick={() => scrollTo('inicio')}>
             <img
               src="/logo.png"
               alt="Trucco"
-              className={`transition-all duration-300 object-contain ${scrolled ? 'h-14' : 'h-20 md:h-24 drop-shadow-lg'}`}
+              className={`transition-all duration-300 object-contain ${scrolled ? 'h-10 sm:h-14' : 'h-12 sm:h-20 md:h-24 drop-shadow-lg'}`}
             /></div>
 
           {/* Desktop Nav */}
@@ -231,7 +232,7 @@ function App() {
         </AnimatePresence>
 
         {/* Contenido superpuesto */}
-        <div className="relative z-10 h-full flex items-center">
+        <div className="relative z-10 h-full flex items-center pt-24 sm:pt-28 pb-12">
           <div className="max-w-7xl mx-auto px-6 w-full">
             <div className="max-w-2xl">
               <motion.div
@@ -609,8 +610,10 @@ function App() {
                 <span>La Urbanización Emmanuel<br />Barrio 20 de Julio<br />Cartagena, Bolívar</span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-primary" />
-                <span>Pedidos por WhatsApp</span>
+                <Phone className="w-5 h-5 text-primary shrink-0" />
+                <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+                  WhatsApp: 317 192 2866
+                </a>
               </li>
             </ul>
           </div>

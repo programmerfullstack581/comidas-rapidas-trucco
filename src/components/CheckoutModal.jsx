@@ -163,11 +163,8 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
           body: JSON.stringify({ filename: fileName, content: ticketContent })
         });
       } catch (err) {
-        console.log('Guardado en servidor local omitido (ej. en Netlify):', err);
+        // En producción (ej. Netlify) fetch local es omitido silenciosamente
       }
-
-      // Descargar automáticamente el archivo .txt en el equipo del cliente / administrador
-      downloadTicketTxt(fileName, ticketContent);
 
       // ═══ 2. CONSTRUIR MENSAJE LIMPIO DE WHATSAPP (100% UTF-8 CODIFICADO) ═══
       let rawWhatsAppText = `*¡Hola Comidas Rápidas Trucco!* 👋\n\n`;
@@ -267,24 +264,6 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
                 <p className="text-gray-500 max-w-sm text-sm">
                   Tu pedido ha sido enviado con éxito a WhatsApp, el carrito se ha vaciado y guardamos el registro en tu historial.
                 </p>
-
-                {savedTicket && (
-                  <div className="w-full bg-white p-4 rounded-2xl border border-cream-dark text-left space-y-2 mt-2">
-                    <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-                      <FileText className="w-4 h-4" /> Comprobante generado
-                    </div>
-                    <p className="text-xs text-gray-500 font-mono break-all">
-                      {savedTicket.filename}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => downloadTicketTxt(savedTicket.filename, savedTicket.content)}
-                      className="w-full py-2 px-3 bg-cream hover:bg-cream-dark border border-cream-dark rounded-xl text-xs font-bold text-neutral flex items-center justify-center gap-2 transition-colors mt-2"
-                    >
-                      <Download className="w-3.5 h-3.5" /> Descargar copia de respaldo (.txt)
-                    </button>
-                  </div>
-                )}
 
                 <button 
                   onClick={handleClose}
