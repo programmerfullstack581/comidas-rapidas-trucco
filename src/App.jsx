@@ -401,25 +401,50 @@ function App() {
                   </div>
                 </div>
 
-                {/* Ubicación Google Maps */}
-                <div className="bg-white border-2 border-cream-dark p-6 rounded-2xl shadow-sm flex flex-col h-[300px]">
-                  <h4 className="font-bold text-primary mb-3 flex items-center gap-2">
-                    <MapPin className="w-5 h-5" /> Dónde Encontrarnos
-                  </h4>
-                  <p className="text-gray-600 text-sm mb-4 font-medium">
-                    La Urbanización Emmanuel, Barrio 20 de Julio. Cartagena, Bolívar
-                  </p>
-                  <div className="flex-grow rounded-xl overflow-hidden bg-cream relative">
-                    <iframe 
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15694.757805178128!2d-75.5036102!3d10.3666667!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8ef625a6eb823cfb%3A0xc66fbfa9463c2603!2s20%20De%20Julio%2C%20Cartagena%20de%20Indias%2C%20Provincia%20de%20Cartagena%2C%20Bol%C3%ADvar!5e0!3m2!1ses!2sco!4v1714000000000!5m2!1ses!2sco" 
-                      width="100%" 
-                      height="100%" 
-                      style={{ border: 0, position: 'absolute', inset: 0 }} 
-                      allowFullScreen="" 
-                      loading="lazy" 
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title="Ubicación Comidas Rápidas Trucco"
-                    ></iframe>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Ubicación Google Maps */}
+                  <div className="bg-white border-2 border-cream-dark p-5 rounded-2xl shadow-sm flex flex-col h-[280px]">
+                    <h4 className="font-bold text-primary mb-2 flex items-center gap-2">
+                      <MapPin className="w-5 h-5" /> Ubicación
+                    </h4>
+                    <p className="text-gray-600 text-xs mb-3 font-medium leading-tight">
+                      Urbanización Emmanuel, 20 de Julio. Cartagena
+                    </p>
+                    <div className="flex-grow rounded-xl overflow-hidden bg-cream relative">
+                      <iframe 
+                        src="https://maps.google.com/maps?q=Urbanizaci%C3%B3n%20Emmanuel,%20Barrio%2020%20de%20Julio,%20Cartagena,%20Bol%C3%ADvar&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                        width="100%" 
+                        height="100%" 
+                        style={{ border: 0, position: 'absolute', inset: 0 }} 
+                        allowFullScreen="" 
+                        loading="lazy" 
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Ubicación Comidas Rápidas Trucco"
+                      ></iframe>
+                    </div>
+                  </div>
+
+                  {/* Información Importante */}
+                  <div className="bg-white border-2 border-cream-dark p-5 rounded-2xl shadow-sm flex flex-col h-[280px]">
+                    <h4 className="font-bold text-primary mb-4 flex items-center gap-2">
+                      <Truck className="w-5 h-5" /> Envíos y Pagos
+                    </h4>
+                    
+                    <div className="space-y-4 flex-grow">
+                      <div>
+                        <h5 className="font-black text-neutral text-sm mb-1">🛵 Zonas de Cobertura</h5>
+                        <p className="text-gray-500 text-xs leading-relaxed">
+                          Llegamos a gran parte de la zona sur occidente y zonas aledañas al 20 de Julio. ¡Pregunta por tu barrio al WhatsApp!
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h5 className="font-black text-neutral text-sm mb-1">💳 Medios de Pago</h5>
+                        <p className="text-gray-500 text-xs leading-relaxed">
+                          Recibimos pagos contra entrega en <strong>Efectivo</strong>, transferencias por <strong>Nequi</strong> y <strong>Daviplata</strong>.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
