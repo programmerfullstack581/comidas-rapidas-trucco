@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://comidasrapidastrucco.netlify.app/sitemap.xml

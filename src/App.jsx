@@ -83,11 +83,51 @@ function App() {
     return () => clearInterval(timer);
   }, [heroImages.length]);
 
+  // Restaurar sección activa si se recarga la página
+  useEffect(() => {
+    const targetHash = window.location.hash.replace('#', '') || sessionStorage.getItem('trucco_active_section');
+    if (targetHash && targetHash !== 'inicio') {
+      setActiveSection(targetHash);
+      const timer = setTimeout(() => {
+        const element = document.getElementById(targetHash);
+        if (element) {
+          const offset = 80;
+          const top = element.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Detectar la sección actual al scrollear y sincronizarla
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
+
+      const sections = ['inicio', 'nosotros', 'menu', 'contacto'];
+      const scrollPos = window.scrollY + 200;
+
+      for (const sectionId of sections) {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            setActiveSection(sectionId);
+            sessionStorage.setItem('trucco_active_section', sectionId);
+            if (window.location.hash !== `#${sectionId}` && sectionId !== 'inicio') {
+              window.history.replaceState(null, null, `#${sectionId}`);
+            } else if (sectionId === 'inicio' && window.location.hash) {
+              window.history.replaceState(null, null, window.location.pathname);
+            }
+            break;
+          }
+        }
+      }
     };
-    window.addEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -121,6 +161,12 @@ function App() {
   const scrollTo = (id) => {
     setIsMobileMenuOpen(false);
     setActiveSection(id);
+    sessionStorage.setItem('trucco_active_section', id);
+    if (id !== 'inicio') {
+      window.history.replaceState(null, null, `#${id}`);
+    } else {
+      window.history.replaceState(null, null, window.location.pathname);
+    }
     const element = document.getElementById(id);
     if (element) {
       const offset = 80;
