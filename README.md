@@ -47,6 +47,20 @@ Para correr este proyecto en tu entorno local:
 
 *Nota para usuarios de Windows PowerShell: Si tienes problemas de permisos, recuerda usar `cmd /c "npm run dev"`*.
 
+## 🌐 Despliegue en Netlify
+
+El proyecto ya está completamente configurado para Netlify a través de `netlify.toml` y `public/_redirects`:
+
+- **Build command**: `npm run build`
+- **Publish directory**: `dist`
+
+### Pasos para desplegar:
+1. Inicia sesión en [Netlify](https://app.netlify.com/).
+2. Haz clic en **"Add new site"** > **"Import an existing project"**.
+3. Conéctate con **GitHub** y selecciona el repositorio: `comidas-rapidas-trucco`.
+4. Netlify detectará automáticamente la configuración de `netlify.toml`.
+5. Haz clic en **"Deploy comidas-rapidas-trucco"** ¡y listo! Tu sitio estará en línea con dominio SSL gratuito.
+
 ## 📂 Estructura del Proyecto
 
 Los datos reales de la carta (productos, descripciones, precios y categorías) se encuentran en el archivo `src/data/products.js`. Para modificar algún precio o producto, basta con actualizar ese archivo.
