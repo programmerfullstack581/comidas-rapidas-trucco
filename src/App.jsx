@@ -306,7 +306,7 @@ function App() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-4">
                   <img src="/images/picadas.jpg" alt="Picadas" className="w-full h-52 object-cover rounded-3xl shadow-lg" />
-                  <img src="/images/carta.jpeg" alt="Menú" className="w-full h-36 object-cover rounded-3xl shadow-lg" />
+                  <img src="/images/amburguesas.jpg" alt="Hamburguesas" className="w-full h-36 object-cover rounded-3xl shadow-lg" />
                 </div>
                 <div className="space-y-4 mt-8">
                   <img src="/images/burritos.jpeg" alt="Burritos" className="w-full h-36 object-cover rounded-3xl shadow-lg" />
