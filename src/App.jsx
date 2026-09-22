@@ -6,6 +6,7 @@ import CartSidebar from './components/CartSidebar';
 import CheckoutModal from './components/CheckoutModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
+
 function App() {
   const [cart, setCart] = useState(() => {
     try {
@@ -771,3 +772,4 @@ function App() {
 }
 
 export default App;
+
