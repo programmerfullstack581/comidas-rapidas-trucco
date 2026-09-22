@@ -138,7 +138,7 @@ export function useSheetProducts() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await fetch(SHEET_CSV_URL);
+      const resp = await fetch(SHEET_CSV_URL + '&t=' + Date.now());
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const csv = await resp.text();
       const parsed = csvToProducts(csv);
