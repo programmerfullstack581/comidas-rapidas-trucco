@@ -96,16 +96,6 @@ export default function AdminPanel({ onLogout }) {
     },
   ];
 
-  if (view === 'form') {
-    return (
-      <AdminProductForm
-        product={editingProduct}
-        onSave={handleSave}
-        onCancel={() => { setView('list'); setEditingProduct(null); }}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col md:flex-row font-sans">
       {/* Toast */}
@@ -139,6 +129,15 @@ export default function AdminPanel({ onLogout }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal del Formulario */}
+      {view === 'form' && (
+        <AdminProductForm
+          product={editingProduct}
+          onSave={handleSave}
+          onCancel={() => { setView('list'); setEditingProduct(null); }}
+        />
       )}
 
       {/* ══════════════ BARRA LATERAL (SIDEBAR) ══════════════ */}

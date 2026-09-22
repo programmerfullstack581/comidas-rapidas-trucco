@@ -97,40 +97,29 @@ export default function AdminProductForm({ product, onSave, onCancel }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <button
-            onClick={onCancel}
-            className="p-2 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-white">
-              {isEditing ? 'Editar Producto' : 'Nuevo Producto'}
-            </h1>
-            <p className="text-xs text-gray-400">
-              {isEditing ? `Editando: ${product.name}` : 'Completa los datos del nuevo plato'}
-            </p>
+    <div className="fixed inset-0 bg-black/80 z-[60] overflow-y-auto flex items-start justify-center p-4">
+      <div className="bg-gray-950 w-full max-w-2xl my-8 md:my-16 rounded-3xl border border-gray-800 shadow-2xl overflow-hidden text-left relative">
+        {/* Header del Modal */}
+        <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
+          <div className="px-5 py-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-bold text-white">
+                {isEditing ? 'Editar Producto' : 'Nuevo Producto'}
+              </h1>
+              <p className="text-xs text-gray-400">
+                {isEditing ? `Editando: ${product.name}` : 'Completa los datos del nuevo plato'}
+              </p>
+            </div>
+            <button
+              onClick={onCancel}
+              className="p-2 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-gray-900 font-bold px-5 py-2 rounded-xl transition shadow-lg shadow-yellow-500/20 disabled:opacity-50"
-          >
-            {saving ? (
-              <div className="w-4 h-4 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Guardar
-          </button>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        <form onSubmit={handleSubmit} className="px-5 py-6 space-y-6">
 
         {/* Imagen del producto */}
         <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 space-y-4">
@@ -334,6 +323,7 @@ export default function AdminProductForm({ product, onSave, onCancel }) {
           </button>
         </div>
       </form>
+      </div>
     </div>
   );
 }
