@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   LogOut, Plus, Pencil, Trash2,
   ChefHat, Search, Package, AlertTriangle, CheckCircle,
-  ExternalLink, X, RefreshCw
+  ExternalLink, X, RefreshCw, Eye, ClipboardList, Check
 } from 'lucide-react';
 import { useAdminProducts } from '../hooks/useAdminProducts';
 import AdminProductForm from './AdminProductForm';
@@ -10,8 +10,11 @@ import AdminProductForm from './AdminProductForm';
 export default function AdminPanel({ onLogout }) {
   const { products, categories, loading, error, addProduct, updateProduct, deleteProduct } = useAdminProducts();
 
+  const [activeTab, setActiveTab] = useState('productos'); // 'productos' | 'pedidos'
+  const [orders, setOrders] = useState([]);
   const [view, setView] = useState('list'); // 'list' | 'form'
   const [editingProduct, setEditingProduct] = useState(null);
+  const [viewingProduct, setViewingProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('Todos');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -25,6 +28,40 @@ export default function AdminPanel({ onLogout }) {
   useEffect(() => {
     if (error) showToast(`Error al sincronizar: ${error}`, 'error');
   }, [error]);
+
+  useEffect(() => {
+    if (activeTab === 'pedidos') {
+      loadOrders();
+    }
+  }, [activeTab]);
+
+  const loadOrders = () => {
+    try {
+      const historyStr = localStorage.getItem('trucco_order_history');
+      if (historyStr) {
+        // Sort newest first
+        setOrders(JSON.parse(historyStr).reverse());
+      } else {
+        setOrders([]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const markOrderCompleted = (orderId) => {
+    const newOrders = orders.map(o => o.id === orderId ? { ...o, status: 'completed' } : o);
+    setOrders(newOrders);
+    localStorage.setItem('trucco_order_history', JSON.stringify(newOrders.reverse())); // reverse back to normal before save
+    loadOrders(); // reload
+  };
+
+  const deleteOrder = (orderId) => {
+    const newOrders = orders.filter(o => o.id !== orderId);
+    setOrders(newOrders);
+    localStorage.setItem('trucco_order_history', JSON.stringify(newOrders.reverse()));
+    loadOrders();
+  };
 
   const handleSave = async (formData) => {
     try {
@@ -109,8 +146,14 @@ export default function AdminPanel({ onLogout }) {
 
       {/* Modal confirmación eliminar */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-red-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+        <div 
+          className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4"
+          onClick={() => setDeleteConfirm(null)}
+        >
+          <div 
+            className="bg-gray-900 border border-red-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-900/50 rounded-full flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-400" />
@@ -140,6 +183,69 @@ export default function AdminPanel({ onLogout }) {
         />
       )}
 
+      {/* Modal de Detalles del Producto (Ver) */}
+      {viewingProduct && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setViewingProduct(null)}
+        >
+          <div 
+            className="bg-gray-900 border border-gray-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Imagen Header */}
+            <div className="relative h-64 bg-gray-800">
+              {viewingProduct.image ? (
+                <img src={viewingProduct.image} alt={viewingProduct.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ChefHat className="w-16 h-16 text-gray-700" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent" />
+              <button 
+                onClick={() => setViewingProduct(null)}
+                className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-sm transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-6">
+              <div className="mb-4">
+                <span className="bg-yellow-400/10 text-yellow-400 text-xs font-bold px-3 py-1 rounded-full border border-yellow-400/20">
+                  {viewingProduct.category}
+                </span>
+                <h2 className="text-2xl font-black text-white mt-3 mb-2">{viewingProduct.name}</h2>
+                <p className="text-gray-400 text-sm leading-relaxed">{viewingProduct.description}</p>
+              </div>
+
+              <div className="bg-gray-950 rounded-2xl p-4 border border-gray-800">
+                <h3 className="font-bold text-gray-300 mb-3 text-sm flex items-center gap-2">
+                  <Package className="w-4 h-4" /> Variantes y Precios
+                </h3>
+                <div className="space-y-2">
+                  {viewingProduct.variants.map((v, i) => (
+                    <div key={i} className="flex justify-between items-center py-2 border-b border-gray-800 last:border-0 last:pb-0">
+                      <span className="text-gray-300 text-sm">{v.label}</span>
+                      <span className="font-bold text-yellow-400">${v.price.toLocaleString('es-CO')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setViewingProduct(null)}
+                className="w-full mt-6 bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 rounded-xl transition"
+              >
+                Cerrar detalles
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ══════════════ BARRA LATERAL (SIDEBAR) ══════════════ */}
       <aside className="hidden md:flex w-64 flex-col bg-gray-900 border-r border-gray-800">
         <div className="p-6 border-b border-gray-800 flex flex-col items-center justify-center gap-2">
@@ -148,11 +254,21 @@ export default function AdminPanel({ onLogout }) {
         </div>
 
         <div className="flex-1 py-6 px-4 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 bg-yellow-400/10 text-yellow-400 rounded-xl font-medium transition">
+          <button 
+            onClick={() => setActiveTab('productos')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${activeTab === 'productos' ? 'bg-yellow-400/10 text-yellow-400' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+          >
             <Package className="w-5 h-5" /> Productos
           </button>
           
-          <a href="/" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-medium transition">
+          <button 
+            onClick={() => setActiveTab('pedidos')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${activeTab === 'pedidos' ? 'bg-yellow-400/10 text-yellow-400' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+          >
+            <ClipboardList className="w-5 h-5" /> Historial de Pedidos
+          </button>
+
+          <a href="/" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-medium transition mt-4 border-t border-gray-800 pt-4">
             <ExternalLink className="w-5 h-5" /> Ver mi página
           </a>
         </div>
@@ -165,19 +281,36 @@ export default function AdminPanel({ onLogout }) {
       </aside>
 
       {/* ══════════════ HEADER MÓVIL ══════════════ */}
-      <div className="md:hidden bg-gray-900 border-b border-gray-800 sticky top-0 z-10 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Trucco" className="h-8 w-auto object-contain drop-shadow-lg" />
-          <h1 className="font-bold text-white text-sm">Admin Panel</h1>
+      <div className="md:hidden bg-gray-900 border-b border-gray-800 sticky top-0 z-10 flex flex-col">
+        <div className="px-4 py-3 flex items-center justify-between border-b border-gray-800">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Trucco" className="h-8 w-auto object-contain drop-shadow-lg" />
+            <h1 className="font-bold text-white text-sm">Admin Panel</h1>
+          </div>
+          <button onClick={onLogout} className="text-red-400 p-2">
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
-        <button onClick={onLogout} className="text-red-400 p-2">
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div className="flex">
+          <button 
+            onClick={() => setActiveTab('productos')}
+            className={`flex-1 py-3 text-sm font-bold border-b-2 transition ${activeTab === 'productos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-500'}`}
+          >
+            Productos
+          </button>
+          <button 
+            onClick={() => setActiveTab('pedidos')}
+            className={`flex-1 py-3 text-sm font-bold border-b-2 transition ${activeTab === 'pedidos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-500'}`}
+          >
+            Pedidos
+          </button>
+        </div>
       </div>
 
       {/* ══════════════ CONTENIDO PRINCIPAL ══════════════ */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-gray-950/50">
         
+        {activeTab === 'productos' && (
         <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-5xl mx-auto w-full">
           
           {/* Header de la sección */}
@@ -296,6 +429,12 @@ export default function AdminPanel({ onLogout }) {
                   {/* Acciones */}
                   <div className="flex gap-2 flex-shrink-0 mt-3 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-gray-800 w-full md:w-auto justify-end">
                     <button
+                      onClick={() => setViewingProduct(product)}
+                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-green-400 hover:text-green-300 bg-green-900/20 hover:bg-green-900/40 rounded-xl transition font-medium text-sm"
+                    >
+                      <Eye className="w-4 h-4" /> <span className="md:hidden">Ver</span>
+                    </button>
+                    <button
                       onClick={() => handleEdit(product)}
                       className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-blue-400 hover:text-blue-300 bg-blue-900/20 hover:bg-blue-900/40 rounded-xl transition font-medium text-sm"
                     >
@@ -329,6 +468,86 @@ export default function AdminPanel({ onLogout }) {
           </div>
           
         </div>
+        )}
+
+        {/* ══════════════ TAB DE PEDIDOS ══════════════ */}
+        {activeTab === 'pedidos' && (
+          <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-5xl mx-auto w-full">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
+                Historial de Pedidos
+              </h1>
+              <p className="text-gray-400 text-sm">Pedidos generados desde el carrito de compras</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {orders.length === 0 ? (
+                <div className="text-center py-16 bg-gray-900 rounded-3xl border border-gray-800">
+                  <ClipboardList className="w-16 h-16 text-gray-700 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-gray-300">No hay pedidos</h3>
+                  <p className="text-gray-500 mt-2">Aún no se han enviado pedidos a WhatsApp.</p>
+                </div>
+              ) : (
+                orders.map((order) => (
+                  <div key={order.id} className={`flex flex-col bg-gray-900 border ${order.status === 'completed' ? 'border-green-800/50' : 'border-gray-800'} rounded-3xl p-5 md:p-6 transition shadow-lg`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                          #{order.id} - {order.name}
+                          {order.status === 'completed' && (
+                            <span className="bg-green-900/30 text-green-400 text-xs px-2 py-1 rounded-md flex items-center gap-1"><Check className="w-3 h-3"/> Completado</span>
+                          )}
+                        </h3>
+                        <p className="text-xs text-gray-400 mt-1">{order.date} a las {order.time}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-black text-xl text-yellow-400">${order.total.toLocaleString('es-CO')}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300 mb-4 bg-gray-950 p-4 rounded-xl border border-gray-800">
+                      <div>
+                        <p><strong className="text-gray-400">Teléfono:</strong> {order.phone}</p>
+                        <p><strong className="text-gray-400">Tipo:</strong> {order.orderType === 'domicilio' ? '🛵 Domicilio' : '🏪 Recoger'}</p>
+                        {order.address && <p><strong className="text-gray-400">Dirección:</strong> {order.address}</p>}
+                        {order.notes && <p><strong className="text-gray-400">Notas:</strong> {order.notes}</p>}
+                      </div>
+                      <div>
+                        <strong className="block text-gray-400 mb-1">Productos:</strong>
+                        <ul className="space-y-1">
+                          {order.items.map((item, i) => (
+                            <li key={i} className="flex justify-between border-b border-gray-800 pb-1 last:border-0">
+                              <span>{item.quantity}x {item.name} {item.variantLabel !== item.name ? `(${item.variantLabel})` : ''}</span>
+                              <span className="text-gray-500">${(item.price * item.quantity).toLocaleString('es-CO')}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end mt-2 pt-4 border-t border-gray-800">
+                      {order.status !== 'completed' && (
+                        <button
+                          onClick={() => markOrderCompleted(order.id)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-medium rounded-xl transition text-sm"
+                        >
+                          <Check className="w-4 h-4" /> Marcar Listo
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteOrder(order.id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-red-300 font-medium rounded-xl transition text-sm"
+                      >
+                        <Trash2 className="w-4 h-4" /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );

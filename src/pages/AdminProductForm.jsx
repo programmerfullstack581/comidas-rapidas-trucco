@@ -97,8 +97,14 @@ export default function AdminProductForm({ product, onSave, onCancel }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-[60] overflow-y-auto flex items-start justify-center p-4">
-      <div className="bg-gray-950 w-full max-w-2xl my-8 md:my-16 rounded-3xl border border-gray-800 shadow-2xl overflow-hidden text-left relative">
+    <div 
+      className="fixed inset-0 bg-black/80 z-[60] overflow-y-auto flex items-start justify-center p-4"
+      onClick={onCancel}
+    >
+      <div 
+        className="bg-gray-950 w-full max-w-2xl my-8 md:my-16 rounded-3xl border border-gray-800 shadow-2xl overflow-hidden text-left relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header del Modal */}
         <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
           <div className="px-5 py-4 flex items-center justify-between">

@@ -198,6 +198,29 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
       localStorage.setItem('trucco_last_order_timestamp', Date.now().toString());
       setCooldownRemaining(COOLDOWN_SECONDS);
 
+      // --- NUEVO: Guardar en el historial local del dashboard ---
+      try {
+        const historyStr = localStorage.getItem('trucco_order_history');
+        const history = historyStr ? JSON.parse(historyStr) : [];
+        history.push({
+          id: orderId,
+          date: dateFormatted,
+          time: timeFormatted,
+          name: cleanName,
+          phone: cleanPhone,
+          orderType: formData.orderType,
+          address: formData.address,
+          notes: formData.notes,
+          items: cart,
+          total,
+          status: 'pending' // pending, completed
+        });
+        localStorage.setItem('trucco_order_history', JSON.stringify(history));
+      } catch (err) {
+        console.error("Error guardando historial local", err);
+      }
+      // -----------------------------------------------------------
+
       // CODIFICACIÓN ESTRICTA: encodeURIComponent garantiza cero caracteres corruptos o 
       const encodedMessage = encodeURIComponent(rawWhatsAppText);
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
