@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Clock, MapPin, Phone, Menu as MenuIcon, X, QrCode, ArrowRight, Star, Flame, ChefHat, Truck, Heart, ArrowDown } from 'lucide-react';
-import { products, categories, WHATSAPP_NUMBER } from './data/products';
+import { WHATSAPP_NUMBER } from './data/products';
+import { useSheetProducts } from './hooks/useSheetProducts';
 import ProductCard from './components/ProductCard';
 import CartSidebar from './components/CartSidebar';
 import CheckoutModal from './components/CheckoutModal';
@@ -8,6 +9,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 
 function App() {
+  // ── Productos desde Google Sheets (con fallback a products.js) ──
+  const { products, categories } = useSheetProducts();
+
   const [cart, setCart] = useState(() => {
     try {
       const saved = localStorage.getItem('trucco_cart');
