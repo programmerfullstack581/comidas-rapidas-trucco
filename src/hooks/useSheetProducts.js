@@ -9,8 +9,8 @@ import { products as fallbackProducts, categories as fallbackCategories } from '
 
 // ▶ ID del Google Sheet de Comidas Rápidas Trucco
 const SHEET_ID = '15Ba4vVjMyNbmPhk_obKKbkUGa0oJr9r-ANuI_G-TzHk';
-// GID 434772837 = pestaña "productos_trucco"
-const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?gid=434772837&single=true&output=csv`;
+// GID 434772837 = pestaña "productos_trucco" con exportación directa en tiempo real
+const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=434772837`;
 // Apps Script para escribir desde el panel de admin
 export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEPuHcr7MrQeElzbgeeYDTdqnw9uww66SypR0izc8ktIgaTZZNI4dWfqr4Cs6wEG00/exec';
 
