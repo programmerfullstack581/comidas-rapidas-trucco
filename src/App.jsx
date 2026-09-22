@@ -215,6 +215,15 @@ function App() {
                 {link.name}
               </button>
             ))}
+            
+            <div className="w-px h-6 bg-white/20 mx-1"></div>
+            
+            <a
+              href="/admin"
+              className="font-bold px-4 py-2 rounded-full text-sm uppercase tracking-wider transition-all text-yellow-400 hover:text-white hover:bg-white/10 flex items-center gap-2"
+            >
+              <ChefHat className="w-4 h-4" /> Admin
+            </a>
           </nav>
 
           <div className="flex items-center gap-3 z-50 relative">
@@ -252,23 +261,38 @@ function App() {
           </div>
         </div>
 
+        {/* Mobile Nav */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="absolute top-full left-0 w-full bg-neutral shadow-2xl flex flex-col py-4 px-6 z-40 border-t border-white/10"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden bg-neutral border-t border-white/10 overflow-hidden"
             >
-              {navLinks.map((link) => (
-                <button
-                  key={link.name}
-                  onClick={() => scrollTo(link.href)}
-                  className="py-4 text-left font-black text-xl text-white border-b border-white/10 last:border-0 hover:text-secondary transition-colors"
+              <nav className="flex flex-col p-4 space-y-2">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.name}
+                    onClick={() => scrollTo(link.href)}
+                    className={`text-left font-bold px-6 py-4 rounded-2xl uppercase tracking-wider text-sm transition-all ${activeSection === link.href
+                      ? 'bg-primary text-white'
+                      : 'text-white hover:bg-white/5'
+                      }`}
+                  >
+                    {link.name}
+                  </button>
+                ))}
+                
+                <div className="h-px bg-white/10 mx-6 my-2"></div>
+                
+                <a
+                  href="/admin"
+                  className="text-left font-bold px-6 py-4 rounded-2xl uppercase tracking-wider text-sm transition-all text-yellow-400 hover:bg-white/5 flex items-center gap-3"
                 >
-                  {link.name}
-                </button>
-              ))}
+                  <ChefHat className="w-5 h-5" /> Panel de Administración
+                </a>
+              </nav>
             </motion.div>
           )}
         </AnimatePresence>
