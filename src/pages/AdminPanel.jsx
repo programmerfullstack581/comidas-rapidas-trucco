@@ -143,14 +143,9 @@ export default function AdminPanel({ onLogout }) {
 
       {/* ══════════════ BARRA LATERAL (SIDEBAR) ══════════════ */}
       <aside className="hidden md:flex w-64 flex-col bg-gray-900 border-r border-gray-800">
-        <div className="p-6 border-b border-gray-800 flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow shadow-yellow-500/25">
-            <ChefHat className="w-5 h-5 text-gray-900" />
-          </div>
-          <div>
-            <h1 className="font-bold text-white text-lg leading-tight">Admin</h1>
-            <p className="text-xs text-gray-400">Trucco Panel</p>
-          </div>
+        <div className="p-6 border-b border-gray-800 flex flex-col items-center justify-center gap-2">
+          <img src="/logo.png" alt="Comidas Rápidas Trucco" className="h-16 w-auto object-contain drop-shadow-lg" />
+          <p className="text-xs text-gray-400">Trucco Panel</p>
         </div>
 
         <div className="flex-1 py-6 px-4 space-y-2">
@@ -173,10 +168,8 @@ export default function AdminPanel({ onLogout }) {
       {/* ══════════════ HEADER MÓVIL ══════════════ */}
       <div className="md:hidden bg-gray-900 border-b border-gray-800 sticky top-0 z-10 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-            <ChefHat className="w-4 h-4 text-gray-900" />
-          </div>
-          <h1 className="font-bold text-white">Admin Panel</h1>
+          <img src="/logo.png" alt="Trucco" className="h-8 w-auto object-contain drop-shadow-lg" />
+          <h1 className="font-bold text-white text-sm">Admin Panel</h1>
         </div>
         <button onClick={onLogout} className="text-red-400 p-2">
           <LogOut className="w-5 h-5" />

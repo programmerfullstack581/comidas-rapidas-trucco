@@ -62,8 +62,8 @@ export default function AdminLogin({ onLogin }) {
         <div className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-8">
           {/* Logo y título */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl mb-4 shadow-lg shadow-yellow-500/25">
-              <ChefHat className="w-10 h-10 text-gray-900" />
+            <div className="inline-flex items-center justify-center mb-4">
+              <img src="/logo.png" alt="Comidas Rápidas Trucco" className="h-24 w-auto object-contain drop-shadow-2xl" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-1">Panel Administrador</h1>
             <p className="text-gray-400 text-sm">Comidas Rápidas Trucco</p>
