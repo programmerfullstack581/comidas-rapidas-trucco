@@ -369,83 +369,89 @@ export default function AdminPanel({ onLogout }) {
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="w-full bg-transparent text-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 text-sm cursor-pointer"
               >
-                <option value="Todos">Todas las categorías</option>
+                <option value="Todos" className="bg-gray-900 text-white">Todas las categorías</option>
                 {categories.filter(c => c !== 'Todos').map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat} className="bg-gray-900 text-white">{cat}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Lista de productos */}
-          <div className="space-y-3">
+          {/* Lista de productos (GRID TYPE) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.length === 0 ? (
-              <div className="bg-gray-900 border border-gray-800 rounded-3xl text-center py-20 text-gray-500">
-                <Package className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                <p className="text-lg">No se encontraron productos</p>
-                <p className="text-sm mt-1">Intenta con otra búsqueda o agrega uno nuevo.</p>
+              <div className="col-span-full text-center py-16 bg-gray-900 border border-gray-800 rounded-3xl">
+                <ChefHat className="w-16 h-16 text-gray-700 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-300">No se encontraron productos</h3>
+                <p className="text-gray-500 mt-2">Prueba buscando con otros términos.</p>
               </div>
             ) : (
-              filteredProducts.map(product => (
-                <div
-                  key={product.id}
-                  className="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-2xl p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-4 transition group"
-                >
-                  {/* Imagen */}
-                  <div className="w-full md:w-20 h-32 md:h-20 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">
-                    <img
-                      src={product.image}
-                      alt={product.name}
+              filteredProducts.map((product) => (
+                <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-3xl flex flex-col transition hover:border-gray-700 hover:shadow-xl hover:shadow-black/50 overflow-hidden relative">
+                  
+                  {/* Header / Imagen */}
+                  <div className="relative h-48 bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
                       className="w-full h-full object-cover"
-                      onError={(e) => { e.target.src = ''; e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-3xl">🍔</div>'; }}
+                      loading="lazy"
+                      onError={(e) => { e.target.src = ''; e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-5xl bg-gray-800">🍔</div>'; }}
                     />
+                    <div className="absolute top-3 left-3 bg-yellow-400 text-gray-900 text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-wider shadow-md">
+                      {product.category}
+                    </div>
                   </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-white text-base truncate">{product.name}</h3>
-                        <span className="inline-block text-xs font-medium text-yellow-400 bg-yellow-400/10 px-2.5 py-1 rounded-full mt-1.5">
-                          {product.category}
-                        </span>
-                      </div>
-                      <div className="text-left md:text-right flex-shrink-0 mt-2 md:mt-0">
+                  {/* Cuerpo */}
+                  <div className="p-5 flex flex-col flex-1">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-white text-lg leading-snug mb-2 min-h-[3rem] flex items-center">{product.name}</h3>
+                      <p className="text-sm text-gray-400 mb-4 line-clamp-2 min-h-[2.5rem]">{product.description}</p>
+                    </div>
+
+                    {/* Precios */}
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-800 mb-4 h-14">
+                      <div className="flex flex-col">
                         {product.variants.length === 1 ? (
-                          <p className="text-green-400 font-bold text-base">
+                          <span className="text-green-400 font-bold text-lg">
                             ${product.variants[0].price.toLocaleString('es-CO')}
-                          </p>
+                          </span>
                         ) : (
-                          <p className="text-green-400 font-bold text-base">
+                          <span className="text-green-400 font-bold text-lg">
                             ${Math.min(...product.variants.map(v => v.price)).toLocaleString('es-CO')} +
-                          </p>
+                          </span>
                         )}
-                        <p className="text-xs text-gray-500 mt-0.5">{product.variants.length} opción{product.variants.length !== 1 ? 'es' : ''}</p>
+                        {product.variants.length > 1 && (
+                          <span className="text-xs text-gray-500 font-medium">{product.variants.length} opciones</span>
+                        )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-400 mt-2 line-clamp-1">{product.description}</p>
-                  </div>
 
-                  {/* Acciones */}
-                  <div className="flex gap-2 flex-shrink-0 mt-3 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-gray-800 w-full md:w-auto justify-end">
-                    <button
-                      onClick={() => setViewingProduct(product)}
-                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-green-400 hover:text-green-300 bg-green-900/20 hover:bg-green-900/40 rounded-xl transition font-medium text-sm"
-                    >
-                      <Eye className="w-4 h-4" /> <span className="md:hidden">Ver</span>
-                    </button>
-                    <button
-                      onClick={() => handleEdit(product)}
-                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-blue-400 hover:text-blue-300 bg-blue-900/20 hover:bg-blue-900/40 rounded-xl transition font-medium text-sm"
-                    >
-                      <Pencil className="w-4 h-4" /> <span className="md:hidden">Editar</span>
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product)}
-                      className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 rounded-xl transition font-medium text-sm"
-                    >
-                      <Trash2 className="w-4 h-4" /> <span className="md:hidden">Eliminar</span>
-                    </button>
+                    {/* Acciones */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => setViewingProduct(product)}
+                        className="flex items-center justify-center p-2.5 text-green-400 hover:text-green-300 bg-green-900/20 hover:bg-green-900/40 rounded-xl transition"
+                        title="Ver detalles"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="flex items-center justify-center p-2.5 text-blue-400 hover:text-blue-300 bg-blue-900/20 hover:bg-blue-900/40 rounded-xl transition"
+                        title="Editar producto"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product)}
+                        className="flex items-center justify-center p-2.5 text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 rounded-xl transition"
+                        title="Eliminar producto"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
