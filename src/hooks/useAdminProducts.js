@@ -1,101 +1,85 @@
 import { useState, useEffect } from 'react';
-import { products as originalProducts, categories as originalCategories } from '../data/products';
-
-const STORAGE_KEY = 'trucco_admin_products';
-const CATEGORIES_KEY = 'trucco_admin_categories';
+import { useSheetProducts, APPS_SCRIPT_URL } from './useSheetProducts';
 
 export function useAdminProducts() {
-  const [products, setProducts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : originalProducts;
-    } catch {
-      return originalProducts;
-    }
-  });
-
-  const [categories, setCategories] = useState(() => {
-    try {
-      const saved = localStorage.getItem(CATEGORIES_KEY);
-      return saved ? JSON.parse(saved) : originalCategories;
-    } catch {
-      return originalCategories;
-    }
-  });
-
-  // Persistir productos en localStorage cada vez que cambien
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-    } catch (err) {
-      console.error('Error guardando productos:', err);
-    }
-  }, [products]);
+  const { products: sheetProducts, categories, loading: loadingSheet, refresh } = useSheetProducts();
+  
+  const [products, setProducts] = useState(sheetProducts);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
-    } catch (err) {
-      console.error('Error guardando categorías:', err);
-    }
-  }, [categories]);
+    setProducts(sheetProducts);
+  }, [sheetProducts]);
 
-  // Agregar producto nuevo
-  const addProduct = (productData) => {
+  const syncToSheet = async (newProducts) => {
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({ products: newProducts })
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error || 'Error desconocido');
+      
+      // Update local cache so refresh is immediate
+      localStorage.setItem('trucco_sheet_cache', JSON.stringify(newProducts));
+      localStorage.setItem('trucco_sheet_cache_time', String(Date.now()));
+      
+      // Also fetch from sheet again just in case
+      await refresh();
+    } catch (err) {
+      console.error("Error guardando en Google Sheets:", err);
+      setSaveError(err.message);
+      // Revert to sheet products on failure
+      setProducts(sheetProducts);
+      throw err; // throw to let component know it failed
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const addProduct = async (productData) => {
     const newId = Math.max(...products.map(p => p.id), 0) + 1;
     const newProduct = { ...productData, id: newId };
-    setProducts(prev => [...prev, newProduct]);
+    const newProducts = [...products, newProduct];
+    setProducts(newProducts);
+    await syncToSheet(newProducts);
     return newProduct;
   };
 
-  // Editar producto existente
-  const updateProduct = (id, productData) => {
-    setProducts(prev =>
-      prev.map(p => p.id === id ? { ...p, ...productData, id } : p)
-    );
+  const updateProduct = async (id, productData) => {
+    const newProducts = products.map(p => p.id === id ? { ...p, ...productData, id } : p);
+    setProducts(newProducts);
+    await syncToSheet(newProducts);
   };
 
-  // Eliminar producto
-  const deleteProduct = (id) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const deleteProduct = async (id) => {
+    const newProducts = products.filter(p => p.id !== id);
+    setProducts(newProducts);
+    await syncToSheet(newProducts);
   };
 
-  // Restaurar productos originales
-  const resetToOriginal = () => {
-    setProducts(originalProducts);
-    setCategories(originalCategories);
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(CATEGORIES_KEY);
+  const resetToOriginal = async () => {
+    // We could implement this, but maybe better not to wipe the sheet accidentally.
+    // For now, throw error or leave unimplemented since we don't want to break the Google Sheet.
+    throw new Error("Resetting to original not supported with Google Sheets. Please edit the Sheet directly.");
   };
 
-  // Exportar products.js actualizado para descarga
   const exportProducts = () => {
-    const content = `// ═══════════════════════════════════════════════════
-// DATOS REALES - COMIDAS RÁPIDAS TRUCCO
-// Actualizado desde el panel de administración
-// WhatsApp: 3171922866
-// ═══════════════════════════════════════════════════
-
-export const WHATSAPP_NUMBER = "573171922866";
-
-export const categories = ${JSON.stringify(categories, null, 2)};
-
-export const products = ${JSON.stringify(products, null, 2)};
-`;
-    const blob = new Blob([content], { type: 'text/javascript' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'products.js';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Deprecated for Google Sheets flow, but keep for compatibility if needed.
+    alert("Exportar ya no es necesario. Los cambios se guardan directamente en Google Sheets.");
   };
 
   return {
     products,
     categories,
+    loading: loadingSheet || isSaving,
+    error: saveError,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -104,39 +88,9 @@ export const products = ${JSON.stringify(products, null, 2)};
   };
 }
 
-// Hook público para el menú (solo lectura)
+// Hook público para el menú
+// Ahora el App principal ya usa useSheetProducts, esto es solo por si algo más lo requiere.
 export function useProducts() {
-  const [products, setProducts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : originalProducts;
-    } catch {
-      return originalProducts;
-    }
-  });
-
-  const [categories, setCategories] = useState(() => {
-    try {
-      const saved = localStorage.getItem(CATEGORIES_KEY);
-      return saved ? JSON.parse(saved) : originalCategories;
-    } catch {
-      return originalCategories;
-    }
-  });
-
-  // Escuchar cambios del admin en tiempo real
-  useEffect(() => {
-    const handleStorageChange = () => {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) setProducts(JSON.parse(saved));
-        const savedCats = localStorage.getItem(CATEGORIES_KEY);
-        if (savedCats) setCategories(JSON.parse(savedCats));
-      } catch {}
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  return { products, categories };
+  return useSheetProducts();
 }
+

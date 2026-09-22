@@ -1,21 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  LogOut, Plus, Pencil, Trash2, Download, RotateCcw,
+  LogOut, Plus, Pencil, Trash2,
   ChefHat, Search, Package, AlertTriangle, CheckCircle,
-  ExternalLink, X
+  ExternalLink, X, RefreshCw
 } from 'lucide-react';
 import { useAdminProducts } from '../hooks/useAdminProducts';
 import AdminProductForm from './AdminProductForm';
 
 export default function AdminPanel({ onLogout }) {
-  const { products, categories, addProduct, updateProduct, deleteProduct, resetToOriginal, exportProducts } = useAdminProducts();
+  const { products, categories, loading, error, addProduct, updateProduct, deleteProduct } = useAdminProducts();
 
   const [view, setView] = useState('list'); // 'list' | 'form'
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('Todos');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [resetConfirm, setResetConfirm] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -23,16 +22,24 @@ export default function AdminPanel({ onLogout }) {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleSave = (formData) => {
-    if (editingProduct) {
-      updateProduct(editingProduct.id, formData);
-      showToast(`"${formData.name}" actualizado correctamente.`);
-    } else {
-      addProduct(formData);
-      showToast(`"${formData.name}" agregado al menú.`);
+  useEffect(() => {
+    if (error) showToast(`Error al sincronizar: ${error}`, 'error');
+  }, [error]);
+
+  const handleSave = async (formData) => {
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, formData);
+        showToast(`"${formData.name}" guardado en Google Sheets.`);
+      } else {
+        await addProduct(formData);
+        showToast(`"${formData.name}" guardado en Google Sheets.`);
+      }
+      setView('list');
+      setEditingProduct(null);
+    } catch (e) {
+      showToast('Hubo un error al guardar', 'error');
     }
-    setView('list');
-    setEditingProduct(null);
   };
 
   const handleEdit = (product) => {
@@ -49,26 +56,19 @@ export default function AdminPanel({ onLogout }) {
     setDeleteConfirm(product);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirm) {
-      deleteProduct(deleteConfirm.id);
-      showToast(`"${deleteConfirm.name}" eliminado del menú.`, 'warning');
+      try {
+        await deleteProduct(deleteConfirm.id);
+        showToast(`"${deleteConfirm.name}" eliminado de Google Sheets.`, 'warning');
+      } catch (e) {
+        showToast('Error al eliminar', 'error');
+      }
       setDeleteConfirm(null);
     }
   };
 
-  const handleReset = () => {
-    resetToOriginal();
-    setResetConfirm(false);
-    showToast('Productos restaurados al estado original.', 'warning');
-  };
-
-  const handleExport = () => {
-    exportProducts();
-    showToast('Archivo products.js descargado. Reemplázalo en tu proyecto y haz git push.');
-  };
-
-  // Filtrar productos
+// Filtrar productos
   const filteredProducts = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -141,29 +141,6 @@ export default function AdminPanel({ onLogout }) {
         </div>
       )}
 
-      {/* Modal confirmación reset */}
-      {resetConfirm && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-orange-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-orange-900/50 rounded-full flex items-center justify-center">
-                <RotateCcw className="w-5 h-5 text-orange-400" />
-              </div>
-              <div>
-                <h3 className="font-bold text-white">¿Restaurar originales?</h3>
-                <p className="text-xs text-gray-400">Se perderán todos los cambios del admin</p>
-              </div>
-            </div>
-            <p className="text-gray-300 text-sm mb-5">
-              Esto <span className="text-orange-400 font-semibold">borrará todos los cambios</span> que hayas hecho y restaurará los productos originales del menú.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setResetConfirm(false)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm transition">Cancelar</button>
-              <button onClick={handleReset} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-semibold py-2.5 rounded-xl text-sm transition">Sí, restaurar</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-800 sticky top-0 z-10">
@@ -213,26 +190,22 @@ export default function AdminPanel({ onLogout }) {
           ))}
         </div>
 
-        {/* Barra de acciones */}
+        // Barra de acciones reemplazada
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={handleNewProduct}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-gray-900 font-bold px-5 py-2.5 rounded-xl transition shadow-lg shadow-yellow-500/20"
+            disabled={loading}
+            className={`flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-gray-900 font-bold px-5 py-2.5 rounded-xl transition shadow-lg shadow-yellow-500/20 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Plus className="w-4 h-4" /> Agregar producto
           </button>
-          <button
-            onClick={handleExport}
-            className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-green-400 hover:text-green-300 font-medium px-5 py-2.5 rounded-xl transition border border-gray-700"
-          >
-            <Download className="w-4 h-4" /> Exportar products.js
-          </button>
-          <button
-            onClick={() => setResetConfirm(true)}
-            className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-orange-400 hover:text-orange-300 font-medium px-5 py-2.5 rounded-xl transition border border-gray-700"
-          >
-            <RotateCcw className="w-4 h-4" /> Restaurar originales
-          </button>
+          
+          {loading && (
+            <div className="flex items-center gap-2 text-yellow-400 text-sm px-4">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              Sincronizando con Google Sheets...
+            </div>
+          )}
         </div>
 
         {/* Buscador y filtro */}
@@ -329,16 +302,18 @@ export default function AdminPanel({ onLogout }) {
           )}
         </div>
 
-        {/* Instrucciones de exportación */}
-        <div className="bg-blue-900/20 border border-blue-800/50 rounded-2xl p-4">
-          <h3 className="text-sm font-semibold text-blue-300 mb-2 flex items-center gap-2">
-            <Download className="w-4 h-4" /> ¿Cómo publicar los cambios para todos?
+        {/* Instrucciones de Sincronización */}
+        <div className="bg-green-900/20 border border-green-800/50 rounded-2xl p-4 mt-6">
+          <h3 className="text-sm font-semibold text-green-400 mb-2 flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" /> Sincronización con Google Sheets
           </h3>
-          <ol className="text-xs text-blue-200/70 space-y-1.5 list-decimal list-inside">
-            <li>Haz clic en <strong className="text-blue-300">"Exportar products.js"</strong> arriba.</li>
-            <li>Reemplaza el archivo <code className="bg-blue-900/40 px-1 rounded">src/data/products.js</code> en tu proyecto con el que se descargó.</li>
-            <li>Abre la terminal del proyecto y ejecuta: <code className="bg-blue-900/40 px-1 rounded">git add . && git commit -m "actualizar menú" && git push</code></li>
-            <li>Netlify publica automáticamente en 1 minuto. ¡Listo para todos! 🎉</li>
+          <p className="text-xs text-green-200/70 mb-2">
+            Los cambios que hagas aquí se guardan <strong className="text-green-300">automáticamente</strong> en tu hoja de Google Sheets.
+          </p>
+          <ol className="text-xs text-green-200/70 space-y-1.5 list-decimal list-inside">
+            <li>Agrega, edita o elimina productos usando los botones.</li>
+            <li>Al guardar, verás el mensaje de "Sincronizando...".</li>
+            <li>En menos de 5 minutos, todos los clientes verán los cambios en la página principal. ¡Magia! ✨</li>
           </ol>
         </div>
       </div>
