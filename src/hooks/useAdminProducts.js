@@ -16,28 +16,31 @@ export function useAdminProducts() {
     setIsSaving(true);
     setSaveError(null);
     try {
-      const response = await fetch(APPS_SCRIPT_URL, {
+      await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify({ products: newProducts })
       });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error || 'Error desconocido');
       
-      // Update local cache so refresh is immediate
+      // Como usamos no-cors, no podemos leer la respuesta JSON, 
+      // así que asumimos éxito si la red no falló.
+      
+      // Update local cache so refresh is immediate for this device
       localStorage.setItem('trucco_sheet_cache', JSON.stringify(newProducts));
       localStorage.setItem('trucco_sheet_cache_time', String(Date.now()));
       
-      // Also fetch from sheet again just in case
-      await refresh();
+      // No necesitamos hacer refresh desde la red inmediatamente porque ya 
+      // actualizamos la caché y el estado local.
+      // await refresh(); 
     } catch (err) {
       console.error("Error guardando en Google Sheets:", err);
       setSaveError(err.message);
       // Revert to sheet products on failure
       setProducts(sheetProducts);
-      throw err; // throw to let component know it failed
+      throw err;
     } finally {
       setIsSaving(false);
     }
@@ -85,6 +88,7 @@ export function useAdminProducts() {
     deleteProduct,
     resetToOriginal,
     exportProducts,
+    refresh,
   };
 }
 

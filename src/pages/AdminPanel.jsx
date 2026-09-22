@@ -8,7 +8,7 @@ import { useAdminProducts } from '../hooks/useAdminProducts';
 import AdminProductForm from './AdminProductForm';
 
 export default function AdminPanel({ onLogout }) {
-  const { products, categories, loading, error, addProduct, updateProduct, deleteProduct } = useAdminProducts();
+  const { products, categories, loading, error, addProduct, updateProduct, deleteProduct, refresh } = useAdminProducts();
 
   const [activeTab, setActiveTab] = useState('productos'); // 'productos' | 'pedidos'
   const [orders, setOrders] = useState([]);
@@ -320,11 +320,23 @@ export default function AdminPanel({ onLogout }) {
               <p className="text-gray-400 text-sm mt-1">Administra el catálogo de Comidas Rápidas Trucco</p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleNewProduct}
-                disabled={loading}
-                className={`flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-gray-900 font-bold px-6 py-2.5 rounded-xl transition shadow-lg shadow-yellow-500/20 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('trucco_sheet_cache');
+                  localStorage.removeItem('trucco_sheet_cache_time');
+                  refresh();
+                  showToast('Actualizando datos desde Excel...', 'success');
+                }}
+                className="bg-gray-800 hover:bg-gray-700 text-white font-bold p-3 md:px-4 rounded-xl transition flex items-center justify-center gap-2"
+                title="Forzar actualización desde Excel"
+              >
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden md:inline">Actualizar</span>
+              </button>
+              <button 
+                onClick={() => { setEditingProduct(null); setView('form'); }}
+                className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 font-bold py-3 px-5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20"
               >
                 <Plus className="w-5 h-5" /> Agregar producto
               </button>
