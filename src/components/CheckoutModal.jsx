@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Send, CheckCircle, ShieldAlert, Loader2, AlertCircle, FileText, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WHATSAPP_NUMBER } from '../data/products';
+import { APPS_SCRIPT_URL } from '../hooks/useSheetProducts';
 
 const COOLDOWN_SECONDS = 45; // 45 segundos de espera entre pedidos
 
@@ -220,6 +221,35 @@ export default function CheckoutModal({ isOpen, onClose, cart, onConfirmOrder })
         console.error("Error guardando historial local", err);
       }
       // -----------------------------------------------------------
+
+      // --- NUEVO: Guardar pedido en Google Sheets (pestaña 'pedidos') ---
+      try {
+        fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'saveOrder',
+            order: {
+              id: orderId,
+              date: dateFormatted,
+              time: timeFormatted,
+              name: cleanName,
+              phone: cleanPhone,
+              orderType: formData.orderType,
+              address: formData.address || '',
+              notes: formData.notes || '',
+              items: cart,
+              itemsSummary: cart.map(i => `${i.quantity}x ${i.name}${i.variantLabel && i.variantLabel !== i.name ? ` (${i.variantLabel})` : ''}`).join(', '),
+              total: total,
+              status: 'pending'
+            }
+          })
+        }).catch(e => console.warn('Fetch saveOrder async caught:', e));
+      } catch (err) {
+        console.warn("Error enviando pedido a Google Sheets:", err);
+      }
+      // -----------------------------------------------------------------
 
       // CODIFICACIÓN ESTRICTA: encodeURIComponent garantiza cero caracteres corruptos o 
       const encodedMessage = encodeURIComponent(rawWhatsAppText);
