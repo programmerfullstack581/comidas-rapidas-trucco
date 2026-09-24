@@ -14,8 +14,8 @@ export const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}
 // Pestaña "categorias" con exportación directa
 export const SHEET_CATEGORIES_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=categorias`;
 
-// Apps Script v3.0 para escribir desde el panel de admin y registrar pedidos
-export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLGrI4B6M99RzKQxEtIoPsi0f1TiZhsOO91cBhwjkbxWu1Ja1i80vaix6Egp8w5mKf/exec';
+// Apps Script v2.0 para escribir desde el panel de admin y registrar pedidos
+export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAmwqHiaZ1ttSU-AblYS25gbhyxRQvEtHyVNhfY4abZGZxNiarHRp4eaIb7RmgWLKf/exec';
 
 // Cuánto tiempo guardar el caché (5 minutos)
 const CACHE_TTL = 5 * 60 * 1000;

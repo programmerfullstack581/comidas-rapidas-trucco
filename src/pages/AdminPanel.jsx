@@ -3,11 +3,11 @@ import {
   LogOut, Plus, Pencil, Trash2,
   ChefHat, Search, Package, AlertTriangle, CheckCircle,
   ExternalLink, X, RefreshCw, Eye, ClipboardList, Check,
-  FolderPlus, Layers, Phone, MapPin, Clock, Volume2, RotateCcw,
-  Users, UserPlus, KeyRound, Shield, User, Lock
+  FolderPlus, Layers, Phone, MapPin, Clock, Bell, Volume2, RotateCcw,
+  Users, KeyRound, UserPlus, ShieldCheck, UserCheck, Lock
 } from 'lucide-react';
 import { useAdminProducts } from '../hooks/useAdminProducts';
-import { useUsers } from '../hooks/useUsers';
+import { useAdminUsers } from '../hooks/useAdminUsers';
 import { APPS_SCRIPT_URL } from '../hooks/useSheetProducts';
 import AdminProductForm from './AdminProductForm';
 
@@ -17,7 +17,7 @@ export default function AdminPanel({ onLogout }) {
     categories,
     rawCategories,
     loading: loadingProducts,
-    error: productsError,
+    error: productError,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -28,15 +28,13 @@ export default function AdminPanel({ onLogout }) {
 
   const {
     users,
+    currentUser,
     loading: loadingUsers,
     addUser,
-    updateUser,
+    changePassword,
     deleteUser,
-    getCurrentUser,
     refreshUsers
-  } = useUsers();
-
-  const currentUser = getCurrentUser();
+  } = useAdminUsers();
 
   const [activeTab, setActiveTab] = useState('productos'); // 'productos' | 'categorias' | 'pedidos' | 'usuarios'
   const [orders, setOrders] = useState([]);
@@ -48,16 +46,24 @@ export default function AdminPanel({ onLogout }) {
   const [filterCategory, setFilterCategory] = useState('Todos');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleteCategoryConfirm, setDeleteCategoryConfirm] = useState(null);
+  const [deleteUserConfirm, setDeleteUserConfirm] = useState(null);
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [toast, setToast] = useState(null);
 
-  // Estados para gestión de usuarios
-  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [userFormData, setUserFormData] = useState({ usuario: '', nombre: '', password: '', rol: 'admin' });
-  const [deleteUserConfirm, setDeleteUserConfirm] = useState(null);
-  const [userModalError, setUserModalError] = useState('');
+  // Estados para creación y cambio de clave de usuario
+  const [isChangingPassModal, setIsChangingPassModal] = useState(false);
+  const [selectedUserForPass, setSelectedUserForPass] = useState(null);
+  const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [confirmPasswordVal, setConfirmPasswordVal] = useState('');
 
+  const [isNewUserModal, setIsNewUserModal] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    nombre: '',
+    usuario: '',
+    password: '',
+    rol: 'admin'
+  });
+  
   const knownOrdersCount = useRef(0);
 
   const showToast = (message, type = 'success') => {
@@ -85,8 +91,8 @@ export default function AdminPanel({ onLogout }) {
   };
 
   useEffect(() => {
-    if (productsError) showToast(`Error al sincronizar: ${productsError}`, 'error');
-  }, [productsError]);
+    if (productError) showToast(`Error al sincronizar: ${productError}`, 'error');
+  }, [productError]);
 
   // Cargar pedidos desde Google Sheets y localStorage
   const loadOrders = async (silent = false) => {
@@ -250,42 +256,50 @@ export default function AdminPanel({ onLogout }) {
     }
   };
 
-  // ── MÉTODOS DE GESTIÓN DE USUARIOS ────────────────────────
-  const openCreateUserModal = () => {
-    setEditingUser(null);
-    setUserFormData({ usuario: '', nombre: '', password: '', rol: 'admin' });
-    setUserModalError('');
-    setIsUserModalOpen(true);
+  // Manejo de Usuarios y Claves
+  const handleOpenChangePass = (user) => {
+    setSelectedUserForPass(user);
+    setNewPasswordVal('');
+    setConfirmPasswordVal('');
+    setIsChangingPassModal(true);
   };
 
-  const openEditUserModal = (u) => {
-    setEditingUser(u);
-    setUserFormData({ usuario: u.usuario, nombre: u.nombre, password: u.password, rol: u.rol || 'admin' });
-    setUserModalError('');
-    setIsUserModalOpen(true);
-  };
-
-  const handleUserFormSubmit = async (e) => {
+  const handleSaveNewPassword = async (e) => {
     e.preventDefault();
-    setUserModalError('');
-
-    if (!userFormData.usuario.trim() || !userFormData.password.trim()) {
-      setUserModalError('El usuario y la contraseña son obligatorios.');
+    if (!selectedUserForPass) return;
+    if (newPasswordVal.length < 4) {
+      showToast('La contraseña debe tener mínimo 4 caracteres.', 'warning');
       return;
     }
-
+    if (newPasswordVal !== confirmPasswordVal) {
+      showToast('Las contraseñas no coinciden.', 'warning');
+      return;
+    }
     try {
-      if (editingUser) {
-        await updateUser(editingUser.id, userFormData);
-        showToast(`Usuario "${userFormData.usuario}" actualizado en Google Sheets.`);
-      } else {
-        await addUser(userFormData);
-        showToast(`Usuario "${userFormData.usuario}" creado y guardado en Google Sheets.`);
-      }
-      setIsUserModalOpen(false);
-      setEditingUser(null);
+      await changePassword(selectedUserForPass.id, newPasswordVal);
+      showToast(`Contraseña de "@${selectedUserForPass.usuario}" actualizada y guardada en Excel.`);
+      setIsChangingPassModal(false);
+      setSelectedUserForPass(null);
+      setNewPasswordVal('');
+      setConfirmPasswordVal('');
     } catch (err) {
-      setUserModalError(err.message || 'Error al guardar usuario.');
+      showToast(err.message || 'Error al cambiar contraseña', 'error');
+    }
+  };
+
+  const handleCreateUserSubmit = async (e) => {
+    e.preventDefault();
+    if (!newUserForm.usuario.trim() || !newUserForm.password.trim()) {
+      showToast('Usuario y contraseña son requeridos.', 'warning');
+      return;
+    }
+    try {
+      await addUser(newUserForm);
+      showToast(`Usuario "@${newUserForm.usuario}" creado y guardado en Excel.`);
+      setIsNewUserModal(false);
+      setNewUserForm({ nombre: '', usuario: '', password: '', rol: 'admin' });
+    } catch (err) {
+      showToast(err.message || 'Error al crear usuario', 'error');
     }
   };
 
@@ -293,7 +307,7 @@ export default function AdminPanel({ onLogout }) {
     if (deleteUserConfirm) {
       try {
         await deleteUser(deleteUserConfirm.id);
-        showToast(`Usuario "${deleteUserConfirm.usuario}" eliminado.`);
+        showToast(`Usuario "@${deleteUserConfirm.usuario}" eliminado.`);
       } catch (err) {
         showToast(err.message || 'Error al eliminar usuario', 'error');
       }
@@ -321,11 +335,11 @@ export default function AdminPanel({ onLogout }) {
       bg: 'bg-blue-400/10',
     },
     {
-      label: 'Usuarios admin',
+      label: 'Usuarios / Admins',
       value: users.length,
       icon: Users,
-      color: 'text-green-400',
-      bg: 'bg-green-400/10',
+      color: 'text-purple-400',
+      bg: 'bg-purple-400/10',
     },
   ];
 
@@ -400,102 +414,6 @@ export default function AdminPanel({ onLogout }) {
         </div>
       )}
 
-      {/* Modal Crear / Editar Usuario */}
-      {isUserModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
-          onClick={() => setIsUserModalOpen(false)}
-        >
-          <div 
-            className="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-800">
-              <div>
-                <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                  <KeyRound className="w-5 h-5 text-yellow-400" />
-                  {editingUser ? 'Editar Usuario / Cambiar Clave' : 'Crear Nuevo Usuario'}
-                </h3>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Los datos se guardan en la pestaña <code>usuarios</code> de Google Sheets
-                </p>
-              </div>
-              <button 
-                onClick={() => setIsUserModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUserFormSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nombre Completo</label>
-                <input
-                  type="text"
-                  value={userFormData.nombre}
-                  onChange={(e) => setUserFormData({ ...userFormData, nombre: e.target.value })}
-                  placeholder="Ej. Olga Reyes"
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nombre de Usuario (Login)</label>
-                <input
-                  type="text"
-                  value={userFormData.usuario}
-                  onChange={(e) => setUserFormData({ ...userFormData, usuario: e.target.value })}
-                  placeholder="Ej. olga o admin"
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">
-                  {editingUser ? 'Nueva Contraseña' : 'Contraseña de Acceso'}
-                </label>
-                <input
-                  type="text"
-                  value={userFormData.password}
-                  onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
-                  placeholder="Escribe la contraseña (ej. MiClave2026)"
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm font-mono"
-                  required
-                />
-              </div>
-
-              {userModalError && (
-                <div className="p-3 bg-red-900/30 border border-red-800 text-red-400 text-xs rounded-xl flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>{userModalError}</span>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsUserModalOpen(false)}
-                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm font-semibold transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={loadingUsers}
-                  className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-gray-900 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-yellow-400/20 flex items-center justify-center gap-2"
-                >
-                  {loadingUsers ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  {editingUser ? 'Guardar Cambios' : 'Crear Usuario'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Modal confirmación eliminar usuario */}
       {deleteUserConfirm && (
         <div 
@@ -512,16 +430,182 @@ export default function AdminPanel({ onLogout }) {
               </div>
               <div>
                 <h3 className="font-bold text-white">¿Eliminar usuario?</h3>
-                <p className="text-xs text-gray-400">Esta cuenta ya no podrá ingresar al panel</p>
+                <p className="text-xs text-gray-400">Perderá acceso al panel de administración</p>
               </div>
             </div>
             <p className="text-gray-300 text-sm mb-5">
-              ¿Estás seguro de eliminar el usuario <span className="font-semibold text-white">"@{deleteUserConfirm.usuario}"</span> ({deleteUserConfirm.nombre})?
+              ¿Estás seguro de eliminar a <span className="font-semibold text-yellow-400">@{deleteUserConfirm.usuario}</span> ({deleteUserConfirm.nombre})?
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteUserConfirm(null)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm transition">Cancelar</button>
               <button onClick={confirmDeleteUser} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 rounded-xl text-sm transition">Sí, eliminar</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Cambiar Contraseña */}
+      {isChangingPassModal && selectedUserForPass && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
+          onClick={() => setIsChangingPassModal(false)}
+        >
+          <div 
+            className="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-yellow-400/10 text-yellow-400 rounded-xl flex items-center justify-center">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Cambiar Contraseña</h3>
+                  <p className="text-xs text-gray-400">Usuario: @{selectedUserForPass.usuario}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsChangingPassModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">Nueva Contraseña</label>
+                <input
+                  type="password"
+                  value={newPasswordVal}
+                  onChange={(e) => setNewPasswordVal(e.target.value)}
+                  placeholder="Mínimo 4 caracteres"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">Confirmar Nueva Contraseña</label>
+                <input
+                  type="password"
+                  value={confirmPasswordVal}
+                  onChange={(e) => setConfirmPasswordVal(e.target.value)}
+                  placeholder="Escribe la misma contraseña"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsChangingPassModal(false)}
+                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-yellow-400/20"
+                >
+                  Actualizar Clave
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Crear Nuevo Usuario */}
+      {isNewUserModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
+          onClick={() => setIsNewUserModal(false)}
+        >
+          <div 
+            className="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-yellow-400/10 text-yellow-400 rounded-xl flex items-center justify-center">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Crear Nuevo Usuario</h3>
+                  <p className="text-xs text-gray-400">Se guardará en la pestaña <code>usuarios</code> de Excel</p>
+                </div>
+              </div>
+              <button onClick={() => setIsNewUserModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUserSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">Nombre Completo</label>
+                <input
+                  type="text"
+                  value={newUserForm.nombre}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, nombre: e.target.value })}
+                  placeholder="Ej. Juan Pérez"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">Nombre de Usuario (Login)</label>
+                <input
+                  type="text"
+                  value={newUserForm.usuario}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, usuario: e.target.value })}
+                  placeholder="Ej. juan o cajero1"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">Contraseña</label>
+                <input
+                  type="password"
+                  value={newUserForm.password}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                  placeholder="Contraseña de acceso"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">Rol de Usuario</label>
+                <select
+                  value={newUserForm.rol}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, rol: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm cursor-pointer"
+                >
+                  <option value="admin">Administrador (Acceso Total)</option>
+                  <option value="cajero">Cajero / Operador</option>
+                  <option value="cocina">Cocina / Preparación</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNewUserModal(false)}
+                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-yellow-400/20"
+                >
+                  Guardar Usuario
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -603,14 +687,13 @@ export default function AdminPanel({ onLogout }) {
           <img src="/logo.png" alt="Comidas Rápidas Trucco" className="h-16 w-auto object-contain drop-shadow-lg" />
           <p className="text-xs text-yellow-400 font-bold tracking-wide">TRUCCO ADMIN PANEL</p>
           {currentUser && (
-            <div className="mt-2 text-xs bg-gray-800/80 px-3 py-1 rounded-full text-gray-300 border border-gray-700 flex items-center gap-1.5">
-              <User className="w-3 h-3 text-yellow-400" />
-              <span>{currentUser.nombre || currentUser.usuario}</span>
-            </div>
+            <span className="text-[11px] bg-gray-800 text-gray-300 px-2.5 py-0.5 rounded-full border border-gray-700">
+              👤 @{currentUser.usuario}
+            </span>
           )}
         </div>
 
-        <div className="flex-1 py-6 px-4 space-y-2">
+        <div className="flex-1 py-6 px-4 space-y-1.5">
           <button 
             onClick={() => setActiveTab('productos')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${activeTab === 'productos' ? 'bg-yellow-400/10 text-yellow-400 font-bold' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
@@ -643,7 +726,7 @@ export default function AdminPanel({ onLogout }) {
             onClick={() => setActiveTab('usuarios')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${activeTab === 'usuarios' ? 'bg-yellow-400/10 text-yellow-400 font-bold' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
           >
-            <Users className="w-5 h-5" /> Usuarios ({users.length})
+            <Users className="w-5 h-5" /> Usuarios / Claves ({users.length})
           </button>
 
           <a href="/" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-medium transition mt-4 border-t border-gray-800 pt-4">
@@ -663,37 +746,34 @@ export default function AdminPanel({ onLogout }) {
         <div className="px-4 py-3 flex items-center justify-between border-b border-gray-800">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Trucco" className="h-8 w-auto object-contain drop-shadow-lg" />
-            <div>
-              <h1 className="font-bold text-white text-xs leading-tight">Admin Panel</h1>
-              <p className="text-[10px] text-yellow-400">{currentUser?.nombre || currentUser?.usuario}</p>
-            </div>
+            <h1 className="font-bold text-white text-sm">Admin Panel</h1>
           </div>
           <button onClick={onLogout} className="text-red-400 p-2">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex overflow-x-auto no-scrollbar">
+        <div className="flex overflow-x-auto">
           <button 
             onClick={() => setActiveTab('productos')}
-            className={`flex-1 min-w-[80px] py-3 text-xs font-bold border-b-2 text-center transition ${activeTab === 'productos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
+            className={`flex-1 min-w-[90px] py-3 text-xs font-bold border-b-2 transition ${activeTab === 'productos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
           >
-            Productos ({products.length})
+            Platos ({products.length})
           </button>
           <button 
             onClick={() => setActiveTab('categorias')}
-            className={`flex-1 min-w-[80px] py-3 text-xs font-bold border-b-2 text-center transition ${activeTab === 'categorias' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
+            className={`flex-1 min-w-[90px] py-3 text-xs font-bold border-b-2 transition ${activeTab === 'categorias' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
           >
-            Categorías ({rawCategories.length})
+            Categorías
           </button>
           <button 
             onClick={() => setActiveTab('pedidos')}
-            className={`flex-1 min-w-[80px] py-3 text-xs font-bold border-b-2 text-center transition ${activeTab === 'pedidos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
+            className={`flex-1 min-w-[90px] py-3 text-xs font-bold border-b-2 transition ${activeTab === 'pedidos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
           >
             Pedidos ({orders.length})
           </button>
           <button 
             onClick={() => setActiveTab('usuarios')}
-            className={`flex-1 min-w-[80px] py-3 text-xs font-bold border-b-2 text-center transition ${activeTab === 'usuarios' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
+            className={`flex-1 min-w-[90px] py-3 text-xs font-bold border-b-2 transition ${activeTab === 'usuarios' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
           >
             Usuarios ({users.length})
           </button>
@@ -707,7 +787,6 @@ export default function AdminPanel({ onLogout }) {
         {activeTab === 'productos' && (
         <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto w-full">
           
-          {/* Header de la sección */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl md:text-3xl font-black text-white">Menú de Productos</h2>
@@ -758,7 +837,7 @@ export default function AdminPanel({ onLogout }) {
             ))}
           </div>
 
-          {/* Buscador y filtro por categoría dinámica */}
+          {/* Buscador y filtro */}
           <div className="bg-gray-900 border border-gray-800 p-2 rounded-2xl flex flex-col md:flex-row gap-2">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -800,8 +879,6 @@ export default function AdminPanel({ onLogout }) {
             ) : (
               filteredProducts.map((product) => (
                 <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-3xl flex flex-col transition hover:border-gray-700 hover:shadow-xl hover:shadow-black/50 overflow-hidden relative">
-                  
-                  {/* Header / Imagen */}
                   <div className="relative h-48 bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
                     <img 
                       src={product.image} 
@@ -815,14 +892,12 @@ export default function AdminPanel({ onLogout }) {
                     </div>
                   </div>
 
-                  {/* Cuerpo */}
                   <div className="p-5 flex flex-col flex-1">
                     <div className="flex-1">
                       <h3 className="font-bold text-white text-lg leading-snug mb-2 min-h-[3rem] flex items-center">{product.name}</h3>
                       <p className="text-sm text-gray-400 mb-4 line-clamp-2 min-h-[2.5rem]">{product.description}</p>
                     </div>
 
-                    {/* Precios */}
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-800 mb-4 h-14">
                       <div className="flex flex-col">
                         {product.variants.length === 1 ? (
@@ -840,7 +915,6 @@ export default function AdminPanel({ onLogout }) {
                       </div>
                     </div>
 
-                    {/* Acciones */}
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => setViewingProduct(product)}
@@ -900,7 +974,6 @@ export default function AdminPanel({ onLogout }) {
               </button>
             </div>
 
-            {/* Formulario para agregar nueva categoría */}
             <div className="bg-gray-900 border border-gray-800 p-6 rounded-3xl shadow-xl">
               <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                 <FolderPlus className="w-5 h-5 text-yellow-400" /> Crear Nueva Categoría
@@ -921,9 +994,11 @@ export default function AdminPanel({ onLogout }) {
                   <Plus className="w-5 h-5" /> Guardar Categoría
                 </button>
               </form>
+              <p className="text-xs text-gray-500 mt-2">
+                Esta categoría aparecerá de inmediato en los filtros, en el formulario de creación de productos y en la página pública.
+              </p>
             </div>
 
-            {/* Grid de categorías */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {rawCategories.map((cat, idx) => {
                 const prodCount = products.filter(p => p.category === cat).length;
@@ -955,7 +1030,7 @@ export default function AdminPanel({ onLogout }) {
           </div>
         )}
 
-        {/* ══════════════ TAB DE PEDIDOS (EN VIVO CON GOOGLE SHEETS) ══════════════ */}
+        {/* ══════════════ TAB DE PEDIDOS ══════════════ */}
         {activeTab === 'pedidos' && (
           <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto w-full">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -1106,16 +1181,16 @@ export default function AdminPanel({ onLogout }) {
           </div>
         )}
 
-        {/* ══════════════ TAB DE USUARIOS Y ACCESOS ══════════════ */}
+        {/* ══════════════ TAB DE USUARIOS Y CLAVES ══════════════ */}
         {activeTab === 'usuarios' && (
           <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto w-full">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
-                  <Users className="text-yellow-400" /> Usuarios y Contraseñas
+                  <ShieldCheck className="text-yellow-400" /> Usuarios y Contraseñas
                 </h2>
                 <p className="text-gray-400 text-sm mt-1">
-                  Gestiona las cuentas con acceso al panel. Los cambios se sincronizan en la pestaña <code>usuarios</code> de Google Sheets.
+                  Administra las cuentas de acceso y cambia contraseñas sincronizadas directamente con Google Sheets (pestaña <code>usuarios</code>).
                 </p>
               </div>
 
@@ -1123,102 +1198,119 @@ export default function AdminPanel({ onLogout }) {
                 <button 
                   onClick={() => {
                     localStorage.removeItem('trucco_users_cache');
-                    localStorage.removeItem('trucco_users_cache_time');
                     refreshUsers();
                     showToast('Actualizando usuarios desde Google Sheets...', 'success');
                   }}
-                  className="bg-gray-800 hover:bg-gray-700 text-white font-bold p-3 md:px-4 rounded-xl transition flex items-center justify-center gap-2"
-                  title="Actualizar desde Excel"
+                  className="bg-gray-800 hover:bg-gray-700 text-white font-bold p-3 md:px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm"
                 >
-                  <RefreshCw className={`w-5 h-5 ${loadingUsers ? 'animate-spin text-yellow-400' : ''}`} />
-                  <span className="hidden md:inline">Actualizar</span>
+                  <RefreshCw className={`w-4 h-4 ${loadingUsers ? 'animate-spin text-yellow-400' : ''}`} />
+                  <span>Actualizar</span>
                 </button>
 
                 <button 
-                  onClick={openCreateUserModal}
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 font-bold py-3 px-5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20"
+                  onClick={() => setIsNewUserModal(true)}
+                  className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-4 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 text-sm"
                 >
-                  <UserPlus className="w-5 h-5" /> Crear Usuario
+                  <UserPlus className="w-4 h-4" />
+                  <span>Nuevo Usuario</span>
                 </button>
               </div>
             </div>
 
-            {/* Grid de Usuarios */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {users.map((u) => {
-                const isCurrent = currentUser?.usuario?.toLowerCase() === u.usuario.toLowerCase();
-                return (
-                  <div 
-                    key={u.id || u.usuario} 
-                    className="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-3xl p-6 transition shadow-xl flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 flex items-center justify-center font-black text-lg">
-                          {(u.nombre || u.usuario).charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 text-xs font-bold px-2.5 py-1 rounded-full uppercase">
-                            {u.rol || 'admin'}
-                          </span>
-                          {isCurrent && (
-                            <span className="bg-green-900/40 text-green-400 border border-green-700/50 text-xs font-bold px-2.5 py-1 rounded-full">
-                              Tú
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <h3 className="font-bold text-white text-lg">{u.nombre || u.usuario}</h3>
-                      <p className="text-sm text-gray-400 font-mono mt-0.5">@{u.usuario}</p>
-
-                      <div className="mt-4 pt-4 border-t border-gray-800/80 bg-gray-950 p-3 rounded-xl border">
-                        <span className="text-[11px] text-gray-500 block uppercase font-bold tracking-wider mb-1">Contraseña</span>
-                        <div className="flex items-center justify-between font-mono text-sm text-yellow-200">
-                          <span>••••••••</span>
-                          <span className="text-xs text-gray-500 font-mono">({u.password})</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 mt-5 pt-4 border-t border-gray-800">
-                      <button
-                        onClick={() => openEditUserModal(u)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40 rounded-xl text-xs font-bold transition"
-                      >
-                        <Pencil className="w-3.5 h-3.5" /> Cambiar Clave / Editar
-                      </button>
-
-                      {users.length > 1 && (
-                        <button
-                          onClick={() => setDeleteUserConfirm(u)}
-                          className="p-2.5 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition"
-                          title={`Eliminar usuario ${u.usuario}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
+            {/* Tarjeta de Sesión Actual */}
+            {currentUser && (
+              <div className="bg-gradient-to-r from-yellow-950/40 via-gray-900 to-gray-900 border border-yellow-500/30 p-6 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-yellow-400 text-gray-950 flex items-center justify-center font-black text-xl shadow-lg shadow-yellow-400/20">
+                    {currentUser.nombre ? currentUser.nombre[0].toUpperCase() : 'A'}
                   </div>
-                );
-              })}
-            </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-white">{currentUser.nombre}</h3>
+                      <span className="bg-yellow-400/20 text-yellow-400 text-xs px-2.5 py-0.5 rounded-full border border-yellow-400/30 font-bold uppercase">
+                        {currentUser.rol}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-400">Sesión activa como: <strong className="text-white">@{currentUser.usuario}</strong></p>
+                  </div>
+                </div>
 
-            {/* Tarjeta explicativa de sincronización */}
-            <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-700/40 rounded-3xl p-6">
-              <h3 className="text-base font-bold text-yellow-400 mb-2 flex items-center gap-2">
-                <Shield className="w-5 h-5" /> ¿Cómo funciona la tabla de usuarios en Google Sheets?
+                <button
+                  onClick={() => handleOpenChangePass(currentUser)}
+                  className="bg-gray-800 hover:bg-gray-700 text-yellow-400 border border-gray-700 px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2"
+                >
+                  <KeyRound className="w-4 h-4" /> Cambiar mi contraseña
+                </button>
+              </div>
+            )}
+
+            {/* Grid de todos los usuarios registrados */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-yellow-400" /> Cuentas Registradas en el Sistema ({users.length})
               </h3>
-              <p className="text-sm text-yellow-200/80 leading-relaxed mb-3">
-                Puedes cambiar contraseñas y crear usuarios tanto desde este panel como directamente desde tu hoja de cálculo:
-              </p>
-              <ul className="text-xs text-yellow-200/70 space-y-1.5 list-disc list-inside">
-                <li>Crea la pestaña llamada <strong><code>usuarios</code></strong> en tu Google Sheet con las columnas: <code>id, usuario, password, nombre, rol</code>.</li>
-                <li>Cualquier usuario que agregues allí podrá iniciar sesión en <code>/admin</code> con su usuario y contraseña.</li>
-                <li>Si cambias la clave aquí en el panel, se sincronizará automáticamente con tu hoja de cálculo.</li>
-              </ul>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {users.map((u) => {
+                  const isCurrent = currentUser && currentUser.id === u.id;
+                  return (
+                    <div 
+                      key={u.id} 
+                      className={`bg-gray-900 border ${isCurrent ? 'border-yellow-500/40 shadow-lg shadow-yellow-500/5' : 'border-gray-800'} p-5 rounded-3xl flex flex-col justify-between transition hover:border-gray-700`}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gray-800 text-yellow-400 flex items-center justify-center font-bold">
+                            <UserCheck className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-white text-base leading-tight">{u.nombre || u.usuario}</h4>
+                            <span className="text-xs text-yellow-400 font-mono">@{u.usuario}</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] bg-gray-800 text-gray-300 uppercase px-2 py-0.5 rounded-md border border-gray-700">
+                          {u.rol || 'admin'}
+                        </span>
+                      </div>
+
+                      <div className="bg-gray-950 p-3 rounded-xl border border-gray-800/80 mb-4 flex items-center justify-between text-xs">
+                        <span className="text-gray-400 flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5 text-gray-500" /> Clave:
+                        </span>
+                        <span className="font-mono text-gray-300">••••••••</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
+                        <button
+                          onClick={() => handleOpenChangePass(u)}
+                          className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                        >
+                          <KeyRound className="w-3.5 h-3.5 text-yellow-400" /> Cambiar clave
+                        </button>
+                        
+                        {users.length > 1 && (
+                          <button
+                            onClick={() => setDeleteUserConfirm(u)}
+                            className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-xl transition"
+                            title={`Eliminar usuario @${u.usuario}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
+            {/* Nota de ayuda */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 text-xs text-gray-400 space-y-1.5">
+              <p><strong className="text-yellow-400">💡 ¿Cómo funciona la tabla de usuarios?</strong></p>
+              <p>1. Los usuarios y contraseñas se leen de la pestaña <strong><code>usuarios</code></strong> en tu Google Sheet.</p>
+              <p>2. Al cambiar la clave o crear un usuario desde este panel, se sincroniza en vivo con tu hoja de cálculo.</p>
+              <p>3. Puedes usar tu usuario (ej. <code>admin</code> u <code>olga</code>) con su respectiva contraseña para iniciar sesión en cualquier dispositivo.</p>
+            </div>
           </div>
         )}
 
