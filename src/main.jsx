@@ -14,13 +14,17 @@ function AdminRouter() {
     sessionStorage.getItem(SESSION_KEY) === 'true'
   );
 
-  const handleLogin = () => {
+  const handleLogin = (user) => {
     sessionStorage.setItem(SESSION_KEY, 'true');
+    if (user) {
+      sessionStorage.setItem('trucco_current_user', JSON.stringify(user));
+    }
     setAuthed(true);
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem('trucco_current_user');
     setAuthed(false);
   };
 

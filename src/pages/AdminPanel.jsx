@@ -3,9 +3,11 @@ import {
   LogOut, Plus, Pencil, Trash2,
   ChefHat, Search, Package, AlertTriangle, CheckCircle,
   ExternalLink, X, RefreshCw, Eye, ClipboardList, Check,
-  FolderPlus, Layers, Phone, MapPin, Clock, Bell, Volume2, RotateCcw
+  FolderPlus, Layers, Phone, MapPin, Clock, Volume2, RotateCcw,
+  Users, UserPlus, KeyRound, Shield, User, Lock
 } from 'lucide-react';
 import { useAdminProducts } from '../hooks/useAdminProducts';
+import { useUsers } from '../hooks/useUsers';
 import { APPS_SCRIPT_URL } from '../hooks/useSheetProducts';
 import AdminProductForm from './AdminProductForm';
 
@@ -14,17 +16,29 @@ export default function AdminPanel({ onLogout }) {
     products,
     categories,
     rawCategories,
-    loading,
-    error,
+    loading: loadingProducts,
+    error: productsError,
     addProduct,
     updateProduct,
     deleteProduct,
     addCategory,
     deleteCategory,
-    refresh
+    refresh: refreshProducts
   } = useAdminProducts();
 
-  const [activeTab, setActiveTab] = useState('productos'); // 'productos' | 'categorias' | 'pedidos'
+  const {
+    users,
+    loading: loadingUsers,
+    addUser,
+    updateUser,
+    deleteUser,
+    getCurrentUser,
+    refreshUsers
+  } = useUsers();
+
+  const currentUser = getCurrentUser();
+
+  const [activeTab, setActiveTab] = useState('productos'); // 'productos' | 'categorias' | 'pedidos' | 'usuarios'
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [view, setView] = useState('list'); // 'list' | 'form'
@@ -36,7 +50,14 @@ export default function AdminPanel({ onLogout }) {
   const [deleteCategoryConfirm, setDeleteCategoryConfirm] = useState(null);
   const [newCategoryInput, setNewCategoryInput] = useState('');
   const [toast, setToast] = useState(null);
-  
+
+  // Estados para gestión de usuarios
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userFormData, setUserFormData] = useState({ usuario: '', nombre: '', password: '', rol: 'admin' });
+  const [deleteUserConfirm, setDeleteUserConfirm] = useState(null);
+  const [userModalError, setUserModalError] = useState('');
+
   const knownOrdersCount = useRef(0);
 
   const showToast = (message, type = 'success') => {
@@ -64,19 +85,17 @@ export default function AdminPanel({ onLogout }) {
   };
 
   useEffect(() => {
-    if (error) showToast(`Error al sincronizar: ${error}`, 'error');
-  }, [error]);
+    if (productsError) showToast(`Error al sincronizar: ${productsError}`, 'error');
+  }, [productsError]);
 
   // Cargar pedidos desde Google Sheets y localStorage
   const loadOrders = async (silent = false) => {
     if (!silent) setLoadingOrders(true);
     try {
-      // 1. Intentar cargar desde Google Sheets vía Apps Script
       const resp = await fetch(`${APPS_SCRIPT_URL}?action=getOrders&t=${Date.now()}`);
       if (resp.ok) {
         const data = await resp.json();
         if (data && Array.isArray(data.orders)) {
-          // Detectar si hay nuevos pedidos para emitir sonido
           if (knownOrdersCount.current > 0 && data.orders.length > knownOrdersCount.current) {
             playChime();
             showToast('🔔 ¡Nuevo pedido recibido en Google Sheets!', 'success');
@@ -92,7 +111,6 @@ export default function AdminPanel({ onLogout }) {
       console.warn("No se pudieron cargar pedidos de la nube, usando local:", e);
     }
 
-    // Fallback a localStorage
     try {
       const historyStr = localStorage.getItem('trucco_order_history');
       if (historyStr) {
@@ -110,7 +128,6 @@ export default function AdminPanel({ onLogout }) {
 
   useEffect(() => {
     loadOrders();
-    // Sondeo de pedidos cada 15 segundos
     const interval = setInterval(() => {
       loadOrders(true);
     }, 15000);
@@ -128,7 +145,6 @@ export default function AdminPanel({ onLogout }) {
     setOrders(updated);
     localStorage.setItem('trucco_order_history', JSON.stringify(updated));
 
-    // Sincronizar estado en Google Sheets
     try {
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
@@ -234,6 +250,57 @@ export default function AdminPanel({ onLogout }) {
     }
   };
 
+  // ── MÉTODOS DE GESTIÓN DE USUARIOS ────────────────────────
+  const openCreateUserModal = () => {
+    setEditingUser(null);
+    setUserFormData({ usuario: '', nombre: '', password: '', rol: 'admin' });
+    setUserModalError('');
+    setIsUserModalOpen(true);
+  };
+
+  const openEditUserModal = (u) => {
+    setEditingUser(u);
+    setUserFormData({ usuario: u.usuario, nombre: u.nombre, password: u.password, rol: u.rol || 'admin' });
+    setUserModalError('');
+    setIsUserModalOpen(true);
+  };
+
+  const handleUserFormSubmit = async (e) => {
+    e.preventDefault();
+    setUserModalError('');
+
+    if (!userFormData.usuario.trim() || !userFormData.password.trim()) {
+      setUserModalError('El usuario y la contraseña son obligatorios.');
+      return;
+    }
+
+    try {
+      if (editingUser) {
+        await updateUser(editingUser.id, userFormData);
+        showToast(`Usuario "${userFormData.usuario}" actualizado en Google Sheets.`);
+      } else {
+        await addUser(userFormData);
+        showToast(`Usuario "${userFormData.usuario}" creado y guardado en Google Sheets.`);
+      }
+      setIsUserModalOpen(false);
+      setEditingUser(null);
+    } catch (err) {
+      setUserModalError(err.message || 'Error al guardar usuario.');
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (deleteUserConfirm) {
+      try {
+        await deleteUser(deleteUserConfirm.id);
+        showToast(`Usuario "${deleteUserConfirm.usuario}" eliminado.`);
+      } catch (err) {
+        showToast(err.message || 'Error al eliminar usuario', 'error');
+      }
+      setDeleteUserConfirm(null);
+    }
+  };
+
   // Filtrar productos
   const filteredProducts = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -254,9 +321,9 @@ export default function AdminPanel({ onLogout }) {
       bg: 'bg-blue-400/10',
     },
     {
-      label: 'Pedidos pendientes',
-      value: orders.filter(o => o.status !== 'completed').length,
-      icon: Clock,
+      label: 'Usuarios admin',
+      value: users.length,
+      icon: Users,
       color: 'text-green-400',
       bg: 'bg-green-400/10',
     },
@@ -333,7 +400,133 @@ export default function AdminPanel({ onLogout }) {
         </div>
       )}
 
-      {/* Modal del Formulario de Producto (con categorías dinámicas pasadas como prop) */}
+      {/* Modal Crear / Editar Usuario */}
+      {isUserModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
+          onClick={() => setIsUserModalOpen(false)}
+        >
+          <div 
+            className="bg-gray-900 border border-gray-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-800">
+              <div>
+                <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                  <KeyRound className="w-5 h-5 text-yellow-400" />
+                  {editingUser ? 'Editar Usuario / Cambiar Clave' : 'Crear Nuevo Usuario'}
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Los datos se guardan en la pestaña <code>usuarios</code> de Google Sheets
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsUserModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-gray-800 text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUserFormSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  value={userFormData.nombre}
+                  onChange={(e) => setUserFormData({ ...userFormData, nombre: e.target.value })}
+                  placeholder="Ej. Olga Reyes"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">Nombre de Usuario (Login)</label>
+                <input
+                  type="text"
+                  value={userFormData.usuario}
+                  onChange={(e) => setUserFormData({ ...userFormData, usuario: e.target.value })}
+                  placeholder="Ej. olga o admin"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1">
+                  {editingUser ? 'Nueva Contraseña' : 'Contraseña de Acceso'}
+                </label>
+                <input
+                  type="text"
+                  value={userFormData.password}
+                  onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                  placeholder="Escribe la contraseña (ej. MiClave2026)"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm font-mono"
+                  required
+                />
+              </div>
+
+              {userModalError && (
+                <div className="p-3 bg-red-900/30 border border-red-800 text-red-400 text-xs rounded-xl flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{userModalError}</span>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsUserModalOpen(false)}
+                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm font-semibold transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loadingUsers}
+                  className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-gray-900 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-yellow-400/20 flex items-center justify-center gap-2"
+                >
+                  {loadingUsers ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {editingUser ? 'Guardar Cambios' : 'Crear Usuario'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmación eliminar usuario */}
+      {deleteUserConfirm && (
+        <div 
+          className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4"
+          onClick={() => setDeleteUserConfirm(null)}
+        >
+          <div 
+            className="bg-gray-900 border border-red-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-900/50 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white">¿Eliminar usuario?</h3>
+                <p className="text-xs text-gray-400">Esta cuenta ya no podrá ingresar al panel</p>
+              </div>
+            </div>
+            <p className="text-gray-300 text-sm mb-5">
+              ¿Estás seguro de eliminar el usuario <span className="font-semibold text-white">"@{deleteUserConfirm.usuario}"</span> ({deleteUserConfirm.nombre})?
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteUserConfirm(null)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm transition">Cancelar</button>
+              <button onClick={confirmDeleteUser} className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 rounded-xl text-sm transition">Sí, eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal del Formulario de Producto */}
       {view === 'form' && (
         <AdminProductForm
           product={editingProduct}
@@ -409,6 +602,12 @@ export default function AdminPanel({ onLogout }) {
         <div className="p-6 border-b border-gray-800 flex flex-col items-center justify-center gap-2">
           <img src="/logo.png" alt="Comidas Rápidas Trucco" className="h-16 w-auto object-contain drop-shadow-lg" />
           <p className="text-xs text-yellow-400 font-bold tracking-wide">TRUCCO ADMIN PANEL</p>
+          {currentUser && (
+            <div className="mt-2 text-xs bg-gray-800/80 px-3 py-1 rounded-full text-gray-300 border border-gray-700 flex items-center gap-1.5">
+              <User className="w-3 h-3 text-yellow-400" />
+              <span>{currentUser.nombre || currentUser.usuario}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 py-6 px-4 space-y-2">
@@ -440,6 +639,13 @@ export default function AdminPanel({ onLogout }) {
             )}
           </button>
 
+          <button 
+            onClick={() => setActiveTab('usuarios')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${activeTab === 'usuarios' ? 'bg-yellow-400/10 text-yellow-400 font-bold' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+          >
+            <Users className="w-5 h-5" /> Usuarios ({users.length})
+          </button>
+
           <a href="/" target="_blank" rel="noreferrer" className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-medium transition mt-4 border-t border-gray-800 pt-4">
             <ExternalLink className="w-5 h-5" /> Ver Menú Público
           </a>
@@ -457,30 +663,39 @@ export default function AdminPanel({ onLogout }) {
         <div className="px-4 py-3 flex items-center justify-between border-b border-gray-800">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Trucco" className="h-8 w-auto object-contain drop-shadow-lg" />
-            <h1 className="font-bold text-white text-sm">Admin Panel</h1>
+            <div>
+              <h1 className="font-bold text-white text-xs leading-tight">Admin Panel</h1>
+              <p className="text-[10px] text-yellow-400">{currentUser?.nombre || currentUser?.usuario}</p>
+            </div>
           </div>
           <button onClick={onLogout} className="text-red-400 p-2">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex">
+        <div className="flex overflow-x-auto no-scrollbar">
           <button 
             onClick={() => setActiveTab('productos')}
-            className={`flex-1 py-3 text-xs font-bold border-b-2 transition ${activeTab === 'productos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
+            className={`flex-1 min-w-[80px] py-3 text-xs font-bold border-b-2 text-center transition ${activeTab === 'productos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
           >
             Productos ({products.length})
           </button>
           <button 
             onClick={() => setActiveTab('categorias')}
-            className={`flex-1 py-3 text-xs font-bold border-b-2 transition ${activeTab === 'categorias' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
+            className={`flex-1 min-w-[80px] py-3 text-xs font-bold border-b-2 text-center transition ${activeTab === 'categorias' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
           >
             Categorías ({rawCategories.length})
           </button>
           <button 
             onClick={() => setActiveTab('pedidos')}
-            className={`flex-1 py-3 text-xs font-bold border-b-2 transition ${activeTab === 'pedidos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
+            className={`flex-1 min-w-[80px] py-3 text-xs font-bold border-b-2 text-center transition ${activeTab === 'pedidos' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
           >
             Pedidos ({orders.length})
+          </button>
+          <button 
+            onClick={() => setActiveTab('usuarios')}
+            className={`flex-1 min-w-[80px] py-3 text-xs font-bold border-b-2 text-center transition ${activeTab === 'usuarios' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400'}`}
+          >
+            Usuarios ({users.length})
           </button>
         </div>
       </div>
@@ -505,13 +720,13 @@ export default function AdminPanel({ onLogout }) {
                   localStorage.removeItem('trucco_sheet_cache');
                   localStorage.removeItem('trucco_categories_cache');
                   localStorage.removeItem('trucco_sheet_cache_time');
-                  refresh();
+                  refreshProducts();
                   showToast('Actualizando datos desde Google Sheets...', 'success');
                 }}
                 className="bg-gray-800 hover:bg-gray-700 text-white font-bold p-3 md:px-4 rounded-xl transition flex items-center justify-center gap-2"
                 title="Forzar actualización desde Excel"
               >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin text-yellow-400' : ''}`} />
+                <RefreshCw className={`w-5 h-5 ${loadingProducts ? 'animate-spin text-yellow-400' : ''}`} />
                 <span className="hidden md:inline">Actualizar</span>
               </button>
               <button 
@@ -523,7 +738,7 @@ export default function AdminPanel({ onLogout }) {
             </div>
           </div>
 
-          {loading && (
+          {loadingProducts && (
             <div className="flex items-center gap-2 text-yellow-400 text-sm bg-yellow-400/10 px-4 py-3 rounded-xl border border-yellow-400/20">
               <RefreshCw className="w-4 h-4 animate-spin" />
               Sincronizando cambios con Google Sheets...
@@ -675,12 +890,12 @@ export default function AdminPanel({ onLogout }) {
                 onClick={() => {
                   localStorage.removeItem('trucco_categories_cache');
                   localStorage.removeItem('trucco_sheet_cache');
-                  refresh();
+                  refreshProducts();
                   showToast('Actualizando categorías desde Google Sheets...', 'success');
                 }}
                 className="bg-gray-800 hover:bg-gray-700 text-white font-bold p-3 md:px-4 rounded-xl transition flex items-center justify-center gap-2 self-start md:self-auto"
               >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin text-yellow-400' : ''}`} />
+                <RefreshCw className={`w-5 h-5 ${loadingProducts ? 'animate-spin text-yellow-400' : ''}`} />
                 <span>Actualizar</span>
               </button>
             </div>
@@ -700,15 +915,12 @@ export default function AdminPanel({ onLogout }) {
                 />
                 <button
                   type="submit"
-                  disabled={!newCategoryInput.trim() || loading}
+                  disabled={!newCategoryInput.trim() || loadingProducts}
                   className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-6 py-3 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Plus className="w-5 h-5" /> Guardar Categoría
                 </button>
               </form>
-              <p className="text-xs text-gray-500 mt-2">
-                Esta categoría aparecerá de inmediato en los filtros, en el formulario de creación de productos y en la página pública.
-              </p>
             </div>
 
             {/* Grid de categorías */}
@@ -891,6 +1103,122 @@ export default function AdminPanel({ onLogout }) {
                 })
               )}
             </div>
+          </div>
+        )}
+
+        {/* ══════════════ TAB DE USUARIOS Y ACCESOS ══════════════ */}
+        {activeTab === 'usuarios' && (
+          <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto w-full">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
+                  <Users className="text-yellow-400" /> Usuarios y Contraseñas
+                </h2>
+                <p className="text-gray-400 text-sm mt-1">
+                  Gestiona las cuentas con acceso al panel. Los cambios se sincronizan en la pestaña <code>usuarios</code> de Google Sheets.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('trucco_users_cache');
+                    localStorage.removeItem('trucco_users_cache_time');
+                    refreshUsers();
+                    showToast('Actualizando usuarios desde Google Sheets...', 'success');
+                  }}
+                  className="bg-gray-800 hover:bg-gray-700 text-white font-bold p-3 md:px-4 rounded-xl transition flex items-center justify-center gap-2"
+                  title="Actualizar desde Excel"
+                >
+                  <RefreshCw className={`w-5 h-5 ${loadingUsers ? 'animate-spin text-yellow-400' : ''}`} />
+                  <span className="hidden md:inline">Actualizar</span>
+                </button>
+
+                <button 
+                  onClick={openCreateUserModal}
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-gray-900 font-bold py-3 px-5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20"
+                >
+                  <UserPlus className="w-5 h-5" /> Crear Usuario
+                </button>
+              </div>
+            </div>
+
+            {/* Grid de Usuarios */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {users.map((u) => {
+                const isCurrent = currentUser?.usuario?.toLowerCase() === u.usuario.toLowerCase();
+                return (
+                  <div 
+                    key={u.id || u.usuario} 
+                    className="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-3xl p-6 transition shadow-xl flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-12 h-12 rounded-2xl bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 flex items-center justify-center font-black text-lg">
+                          {(u.nombre || u.usuario).charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 text-xs font-bold px-2.5 py-1 rounded-full uppercase">
+                            {u.rol || 'admin'}
+                          </span>
+                          {isCurrent && (
+                            <span className="bg-green-900/40 text-green-400 border border-green-700/50 text-xs font-bold px-2.5 py-1 rounded-full">
+                              Tú
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <h3 className="font-bold text-white text-lg">{u.nombre || u.usuario}</h3>
+                      <p className="text-sm text-gray-400 font-mono mt-0.5">@{u.usuario}</p>
+
+                      <div className="mt-4 pt-4 border-t border-gray-800/80 bg-gray-950 p-3 rounded-xl border">
+                        <span className="text-[11px] text-gray-500 block uppercase font-bold tracking-wider mb-1">Contraseña</span>
+                        <div className="flex items-center justify-between font-mono text-sm text-yellow-200">
+                          <span>••••••••</span>
+                          <span className="text-xs text-gray-500 font-mono">({u.password})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-5 pt-4 border-t border-gray-800">
+                      <button
+                        onClick={() => openEditUserModal(u)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40 rounded-xl text-xs font-bold transition"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Cambiar Clave / Editar
+                      </button>
+
+                      {users.length > 1 && (
+                        <button
+                          onClick={() => setDeleteUserConfirm(u)}
+                          className="p-2.5 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-xl transition"
+                          title={`Eliminar usuario ${u.usuario}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Tarjeta explicativa de sincronización */}
+            <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-700/40 rounded-3xl p-6">
+              <h3 className="text-base font-bold text-yellow-400 mb-2 flex items-center gap-2">
+                <Shield className="w-5 h-5" /> ¿Cómo funciona la tabla de usuarios en Google Sheets?
+              </h3>
+              <p className="text-sm text-yellow-200/80 leading-relaxed mb-3">
+                Puedes cambiar contraseñas y crear usuarios tanto desde este panel como directamente desde tu hoja de cálculo:
+              </p>
+              <ul className="text-xs text-yellow-200/70 space-y-1.5 list-disc list-inside">
+                <li>Crea la pestaña llamada <strong><code>usuarios</code></strong> en tu Google Sheet con las columnas: <code>id, usuario, password, nombre, rol</code>.</li>
+                <li>Cualquier usuario que agregues allí podrá iniciar sesión en <code>/admin</code> con su usuario y contraseña.</li>
+                <li>Si cambias la clave aquí en el panel, se sincronizará automáticamente con tu hoja de cálculo.</li>
+              </ul>
+            </div>
+
           </div>
         )}
 
